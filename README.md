@@ -40,4 +40,23 @@ Add instructions to retrieve these from a repository
 
 ....
 
- 
+## Produce txt datacards
+
+The various options are set in the config/harvestDatacards.yml config file 
+
+Run the following script to produce the txt datacards
+```bash
+python scripts/harvestDatacards.py
+```
+
+## Create workspace
+
+```bash
+combineTool.py -M T2W -i outputs/tauSF_output/cmb/ -o ws.root --X-allow-no-signal
+```
+
+## Run fits 
+
+```bash
+combineTool.py -m 125 -M MultiDimFit --redefineSignalPOIs rate_DY_2018 --saveFitResult -d outputs/tauSF_output/cmb/ws.root --there -n ".ztt.bestfit"  --X-rtd MINIMIZER_analytic
+```

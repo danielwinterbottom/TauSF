@@ -60,6 +60,7 @@ cats['zmm'] = [(1, 'zmm_inclusive')]
 # Create an empty CombineHarvester instance
 cb = CombineHarvester()
 
+# Add processes and observations
 for chn in channels:
   for era in eras:
     # Adding Data,Signal Processes and Background processes to the harvester instance
@@ -69,41 +70,85 @@ for chn in channels:
 
 
 # Add systematics
-#...
+
+# muon selection efficiency for second muon in di-muon dataset
+cb.cp().channel(['zmm']).process(['W'],False).AddSyst(cb, "CMS_eff_m", "lnN", ch.SystMap()(1.02))
+
+# for Wjets in dimuon data the second muon is a fake so add a seperate uncertainty for this - as this uncertainty is so large we don't need to add another uncertainty for the cross section
+cb.cp().channel(['zmm']).process(['W']).AddSyst(cb, "CMS_j_fake_m", "lnN", ch.SystMap()(1.3))
+
+# uncertainty on VV cross-section - set to 10% to cover missing higher order terms which are typically this large
+cb.cp().process(['TTT','VVJ']).AddSyst(cb, "CMS_htt_vvXsec", "lnN", ch.SystMap()(1.1))
+
+# uncertainty on ttbar cross-section - set to 10% to cover missing higher order terms which are typically this large
+cb.cp().process(['TTL','TTJ']).AddSyst(cb, "CMS_htt_tjXsec", "lnN", ch.SystMap()(1.06))
+
+# DY shape uncertainty from re-weighting pT-mass to data (100% variation taked as the uncertainty)
+cb.cp().process(['ZTT','ZL','ZJ']).AddSyst(cb, "CMS_htt_dyShape", "shape", ch.SystMap()(1.0))
+# ttbar shape uncertainty from re-weighting pT-mass to data (100% variation taked as the uncertainty)
+cb.cp().process(['TTL','TTJ']).AddSyst(cb, "CMS_htt_ttbarShape", "shape", ch.SystMap()(1.0))
+
+# TES uncertainties
+cb.cp().channel(['mt']).process(['ZTT','TTL','VVL']).AddSyst(cb, "CMS_scale_t_1prong_$ERA","shape", ch.SystMap()(1.0))
+cb.cp().channel(['mt']).process(['ZTT','TTL','VVL']).AddSyst(cb, "CMS_scale_t_1prong1pizero_$ERA","shape", ch.SystMap()(1.0))
+cb.cp().channel(['mt']).process(['ZTT','TTL','VVL']).AddSyst(cb, "CMS_scale_t_3prong_$ERA", "shape", ch.SystMap()(1.0))
+cb.cp().channel(['mt']).process(['ZTT','TTL','VVL']).AddSyst(cb, "CMS_scale_t_3prong1pizero_$ERA", "shape", ch.SystMap()(1.0))
+
+# mu->tauh energy scale split by decay mode (might want to eventually make sure these don't get added for dm 10 and 11)
+cb.cp().channel(['mt']).process(['ZL']).AddSyst(cb, "CMS_ZLShape_$CHANNEL_1prong_$ERA", "shape", ch.SystMap()(1.00))
+
+cb.cp().channel(['mt']).process(['ZL']).AddSyst(cb, "CMS_ZLShape_$CHANNEL_1prong1pizero_$ERA", "shape", ch.SystMap()(1.00))
+
+# now add unconstrained rate parameters
+
+# a common rate parameter that scales all MC processes in the di-muon channel and the the ZTT, TTL, and VVL in the mu+tauh channel
+# this doesn't need to scale ZL TTJ, VVJ, and W in the mu+tauh channel as there are seperate rate parameters for these processes 
+
+cb.cp().channel(['zmm']).AddSyst(cb, "rate_DY_$ERA","rateParam",ch.SystMap()(1.0))
+cb.cp().channel(['mt']).process(["ZTT", "TTL", "VVL"]).AddSyst(cb, "rate_DY_$ERA","rateParam",ch.SystMap()(1.0))
+
+# rate parameters to scale jet->tauh fake processes in the mu+tauh channel (W, TTJ, VVJ) - one per bin
+
+# rate parameters to scale QCD in the mu+tauh channel  - one per bin
+
+# rate parameters to scale ZL in the mu+tauh channel  - one per bin
+
+# rate parameter to scale the ZTT, TTL, and VVL which in the mu+tauh categories - one per bin
+
+# set sensible ranges for all rate params
+for era in eras:
+  cb.GetParameter("rate_DY_%s" % era).set_range(0.5,1.5)
 
 # Populating Observation, Process and Systematic entries in the harvester instance
 for chn in channels:
   for era in eras:
     if chn == 'zmm': filename = 'shapes/ztt.datacard.m_vis.zmm.%s.root' % era
     #else: filename = .... add mt ones later 
-    print ">>>   file %s"%(filename)
-    print(chn, era)
+    print ">>>   file %s" % (filename)
+    print('%s, %s' % (chn, era))
     cb.cp().channel([chn]).process(bkg_procs[chn]).era([era]).ExtractShapes(filename, "$BIN/$PROCESS", "$BIN/$PROCESS_$SYSTEMATIC")
     if chn == 'mt': cb.cp().channel([chn]).process(sig_procs).era([era]).ExtractShapes(filename, "$BIN/$PROCESS", "$BIN/$PROCESS_$SYSTEMATIC")
 
+# Merge to one bin for Z->mumu CRs
+for b in cb.cp().channel(['zmm']).bin_set():
+  print("Rebinning Z->mumu CRs into 1-bin categories")
+  cb.cp().bin([b]).VariableRebin([50.,150,]);
 
-
+# Rebin histograms for mt channel using Auto Rebinning
+# ...
 
 # Convert any shapes in Z->mumu CRs to lnN
-cb.cp().channel(['zmm']).syst_type(["shape"]).ForEachSyst(lambda sys: sys.set_type('lnN')) 
- 
+cb.cp().channel(['zmm']).syst_type(["shape"]).ForEachSyst(lambda sys: sys.set_type('lnN'))
 
+# Zero negetive bins
+print(green("Zeroing NegativeBins"))
+cb.ForEachProc(NegativeBins)
 
-## Merge to one bin for Z->mumu CRs
-#cb.cp().channel(['zmm']).ForEachProc(To1Bin<ch::Process>);
-#cb.cp().channel(['zmm']).ForEachObs(To1Bin<ch::Observation>);
-
-# rebin histograms for mt channel
-# ...
-# zero any negative bins
-# ...
-# delete processes with 0 yield
-# ...
-
-# add bbb uncerts using autoMC stats
+SetStandardBinNames(cb)
+# Add bbb uncerts using autoMC stats
+cb.SetAutoMCStats(cb, 0., 1, 1)
 
 # Write datacards
-SetStandardBinNames(cb)
 print green(">>> writing datacards...")
 datacardtxt  = "%s/cmb/$BIN.txt"%(output_folder)
 datacardroot = "%s/cmb/common/$BIN_input.root"%(output_folder)
