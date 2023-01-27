@@ -40,6 +40,16 @@ Add instructions to retrieve these from a repository
 
 ....
 
+## Converting datacards
+
+If you are starting from 2D histograms in bins of pT vs m_vis these must first be split into
+1D histograms in bins of m_vis
+Run this script to split the datacards:
+
+```bash
+python scripts/convertDatacards.py -f shapes/ztt.datacard.pt_2_vs_m_vis.mt.2017.root
+```
+
 ## Produce txt datacards
 
 The various options are set in the config/harvestDatacards.yml config file 

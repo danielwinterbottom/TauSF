@@ -28,6 +28,7 @@ for e in eras:
   if e not in valid_eras: raise Exception("ERROR: one or more of the eras you specified is not supported, available options are: %s" % ",".join(valid_eras)) 
 
 def green(string,**kwargs):
+    '''Displays text in green text inside a black background'''
     return kwargs.get('pre',"")+"\x1b[0;32;40m%s\033[0m"%string
 
 def NegativeBins(p):
