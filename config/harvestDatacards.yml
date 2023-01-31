@@ -1,2 +1,2 @@
-output_folder: "outputs/tauSF_output"
-eras: "2017,2018"
+output_folder: "outputs/tauSF_output_DMinclusive_allEras"
+eras: "all"

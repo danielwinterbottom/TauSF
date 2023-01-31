@@ -3,6 +3,7 @@
 import ROOT
 import argparse
 import os
+import numpy as np
 ROOT.TH1.AddDirectory(False)
 
 bins=[20.,25.,30.,35.,40.,50.,60.,80.,100.,200.]
@@ -36,6 +37,21 @@ def splitHistogramsAndWriteToFile(infile,outfile,dirname):
               newdirname = '%s_pT_%i_to_%i' % (dirname, int(b_lo), int(b_hi))
               WriteToTFile(hnew, outfile, newdirname+"/"+name)
 
+def findAvepT(infile,dirname):
+    '''Find the average pT of the tau in each pT bin'''
+    directory = infile.Get(dirname)
+    name='ZTT'
+    histo = directory.Get(name).Clone()
+    histo.Add(directory.Get('TTT').Clone()) 
+    histo.Add(directory.Get('VVT').Clone()) 
+    if isinstance(histo, ROOT.TH2):
+        bin_means = []
+        for i, b_lo in enumerate(bins[:-1]):
+          b_hi = bins[i+1]
+          histo.GetYaxis().SetRangeUser(b_lo,b_hi)
+          #print 'pT bin %i-%i, mean pT = %.1f' % (b_lo, b_hi, histo.GetMean(2))
+          bin_means.append(round(histo.GetMean(2),1))
+        print(bin_means)
 parser = argparse.ArgumentParser()
 parser.add_argument('--file', '-f', help= 'File from which subdirectories need to be dropped')
 args = parser.parse_args()
@@ -52,3 +68,6 @@ for key in original_file.GetListOfKeys():
         dirname=key.GetName()
         print('Converting histograms in directory: %s' % dirname)
         splitHistogramsAndWriteToFile(original_file,output_file,dirname)
+        print('Finding mean pTs for directory: %s' % dirname)
+        if 'Gt30' in dirname or 'method12' in dirname: continue
+        findAvepT(original_file, dirname)

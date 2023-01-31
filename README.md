@@ -68,5 +68,22 @@ combineTool.py -M T2W -i outputs/tauSF_output/cmb/ -o ws.root --X-allow-no-signa
 ## Run fits 
 
 ```bash
-combineTool.py -m 125 -M MultiDimFit --redefineSignalPOIs rate_DY_2018 --saveFitResult -d outputs/tauSF_output/cmb/ws.root --there -n ".ztt.bestfit"  --X-rtd MINIMIZER_analytic
+combineTool.py -m 125 -M MultiDimFit --redefineSignalPOIs rate_tauSF_DMinclusive_pT20to25_2018 --saveFitResult -d outputs/tauSF_output/cmb/ws.root --there -n ".ztt.bestfit"  --X-rtd MINIMIZER_analytic --expectSignal 0 --cminDefaultMinimizerStrategy 0 --cminDefaultMinimizerTolerance 0.1 --robustFit
+```
+
+## Run impacts (approximate)
+
+Do fits:
+```bash
+combineTool.py -M Impacts  --doFits --robustFit=1 --approx robust --redefineSignalPOIs rate_tauSF_DM1_pT40to50_2018 -d outputs/tauSF_output_DMbinned/cmb/ws.root  -n ".ztt.impacts"  --X-rtd MINIMIZER_analytic --cminDefaultMinimizerStrategy 0 --cminDefaultMinimizerTolerance 0.1 -m 125
+```
+Collect results:
+
+```bash
+combineTool.py -M Impacts --approx robust --redefineSignalPOIs rate_tauSF_DM1_pT40to50_2018 -d outputs/tauSF_output_DMbinned/cmb/ws.root  -n ".ztt.impacts" -o impacts.json -m 125
+```
+
+Make plot:
+```bash
+plotImpacts.py -i impacts.json -o impacts
 ```
