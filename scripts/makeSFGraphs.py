@@ -14,6 +14,8 @@ dm_bins=args.dm_bins
 
 f = ROOT.TFile(args.file)
 
+fout_name = args.file.replace('.root','.TGraphAsymmErrors.root')
+
 l = f.Get('limit')
 
 vals = {}
@@ -26,6 +28,7 @@ else:
 
 # get values and +/- 1 sigma shifts from tree
 for poi in pois:
+#  if 'postVFP' in poi: continue
   vals[poi] = set()
 
   for i in range(0, l.GetEntries()):
@@ -42,6 +45,12 @@ for e in eras:
   if dm_bins:
     for dm in [0,1,10,11]: graph_values['%i_%s' % (dm,e)] = []
   else: graph_values['inclusive_%s' % e] = []  
+
+bin_boundaries = [20.,25.,30.,35.,40.,50.,60.,80.,100.,200.]
+
+# taking pt bins from average values instead
+pt_vals = [23., 28., 32., 37., 44., 54., 68., 89., 125.] 
+
 
 for v in vals: 
   x = list(vals[v])
@@ -62,8 +71,13 @@ for v in vals:
   graph_values['%s_%s' % (dm_bin,era)].append((x_val, val, e_down, e_up))
 
 
-print graph_values
-fout = ROOT.TFile('test.root','RECREATE')
+
+for i, b in enumerate(bin_boundaries[:-1]]: 
+  print '(pt_2>=%i&&pt_2<%i)*(%.2f)' %(b, bin_boundaries[i+1], graph_values[i]) 
+
+
+print ('Writing to file: %s' % fout_name)
+fout = ROOT.TFile(fout_name,'RECREATE')
 
 for g_val in graph_values:
 

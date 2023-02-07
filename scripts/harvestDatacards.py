@@ -13,8 +13,10 @@ description = '''This script makes datacards with CombineHarvester for performin
 parser = ArgumentParser(prog="harvesterDatacards",description=description,epilog="Success!")
 parser.add_argument('-c', '--config', dest='config', type=str, default='config/harvestDatacards.yml', action='store', help="set config file")
 parser.add_argument('--dm-bins', dest='dm_bins', default=False, action='store_true', help="if specified then the mu+tauh channel fits are also split by tau decay-mode")
+parser.add_argument('--fit-mTGt30', dest='fit_mTGt30', default=False, action='store_true', help="if specified then include the mT>30 categories in the fit to mitigate the sensitivity to mT cut")
 args = parser.parse_args()
 dm_bins=args.dm_bins
+fit_mTGt30=args.fit_mTGt30
 
 with open(args.config, 'r') as file:
    setup = yaml.safe_load(file)
@@ -74,6 +76,18 @@ if dm_bins:
      ((i+1)*100+8, 'mt_dm%i_mTLt30_pT_80_to_100' % dm),
      ((i+1)*100+9, 'mt_dm%i_mTLt30_pT_100_to_200' % dm),
     ]
+  if fit_mTGt30:
+      cats['mt'] += [
+       ((i+1)*100+11,  'mt_dm%i_mTGt30_pT_20_to_25' % dm),
+       ((i+1)*100+12,  'mt_dm%i_mTGt30_pT_25_to_30' % dm),
+       ((i+1)*100+13,  'mt_dm%i_mTGt30_pT_30_to_35' % dm),
+       ((i+1)*100+14,  'mt_dm%i_mTGt30_pT_35_to_40' % dm),
+       ((i+1)*100+15,  'mt_dm%i_mTGt30_pT_40_to_50' % dm),
+       ((i+1)*100+16,  'mt_dm%i_mTGt30_pT_50_to_60' % dm),
+       ((i+1)*100+17,  'mt_dm%i_mTGt30_pT_60_to_80' % dm),
+       ((i+1)*100+18,  'mt_dm%i_mTGt30_pT_80_to_100' % dm),
+       ((i+1)*100+19,  'mt_dm%i_mTGt30_pT_100_to_200' % dm),
+      ]
 else:
 
   cats['mt'] = [
@@ -87,6 +101,19 @@ else:
                (8, 'mt_inclusive_mTLt30_pT_80_to_100'),
                (9, 'mt_inclusive_mTLt30_pT_100_to_200'), 
   ]
+  
+  if fit_mTGt30:
+    cats['mt']  +=[
+                 (11, 'mt_inclusive_mTGt30_pT_20_to_25'),
+                 (12, 'mt_inclusive_mTGt30_pT_25_to_30'),
+                 (13, 'mt_inclusive_mTGt30_pT_30_to_35'),
+                 (14, 'mt_inclusive_mTGt30_pT_35_to_40'),
+                 (15, 'mt_inclusive_mTGt30_pT_40_to_50'),
+                 (16, 'mt_inclusive_mTGt30_pT_50_to_60'),
+                 (17, 'mt_inclusive_mTGt30_pT_60_to_80'),
+                 (18, 'mt_inclusive_mTGt30_pT_80_to_100'),
+                 (19, 'mt_inclusive_mTGt30_pT_100_to_200'),
+    ]
 
 # Create an empty CombineHarvester instance
 cb = CombineHarvester()
@@ -102,11 +129,11 @@ for chn in channels:
 
 # Add systematics
 
-inclusive_bins = [1,2,3,4,5,6,7,8,9]
-dm0_bins = [101,102,103,104,105,106,107,108,109]
-dm1_bins = [201,202,203,204,205,206,207,208,209]
-dm10_bins = [301,302,303,304,305,306,307,308,309]
-dm11_bins = [401,402,403,404,405,406,407,408,409]
+inclusive_bins = [1,2,3,4,5,6,7,8,9, 11,12,13,14,15,16,17,18,19]
+dm0_bins = [101,102,103,104,105,106,107,108,109, 111,112,113,114,115,116,117,118,119]
+dm1_bins = [201,202,203,204,205,206,207,208,209, 211,212,213,214,215,216,217,218,219]
+dm10_bins = [301,302,303,304,305,306,307,308,309, 311,312,313,314,315,316,317,318,319]
+dm11_bins = [401,402,403,404,405,406,407,408,409, 411,412,413,414,415,416,417,418,419]
 
 # muon selection efficiency for second muon in di-muon dataset
 #cb.cp().channel(['zmm']).process(['W'],False).AddSyst(cb, "CMS_eff_m", "lnN", ch.SystMap()(1.02))
@@ -139,9 +166,22 @@ cb.cp().channel(['mt']).process(['ZL']).bin_id(dm0_bins+inclusive_bins).AddSyst(
 cb.cp().channel(['mt']).process(['ZL']).bin_id(dm1_bins+inclusive_bins).AddSyst(cb, "CMS_ZLShape_$CHANNEL_1prong1pizero_$ERA", "shape", ch.SystMap()(1.00))
 
 #MET related uncertainties
-cb.cp().channel(['mt']).process(['QCD'],False).AddSyst(cb, "CMS_scale_j_$ERA", "shape", ch.SystMap()(1.00))
 cb.cp().channel(['mt']).process(['QCD'],False).AddSyst(cb, "CMS_res_j_$ERA", "shape", ch.SystMap()(1.00))
 cb.cp().channel(['mt']).process(['QCD'],False).AddSyst(cb, "CMS_scale_met_unclustered_$ERA", "shape", ch.SystMap()(1.00))
+
+# single JES parameter
+#cb.cp().channel(['mt']).process(['QCD'],False).AddSyst(cb, "CMS_scale_j_$ERA", "shape", ch.SystMap()(1.00))
+# split JES into regrouped uncertainties
+jes_uncert_names = ["Absolute", "Absolute_year", "BBEC1", "BBEC1_year",
+            "EC2", "EC2_year", "FlavorQCD", "HF", "HF_year",
+            "RelativeBal", "RelativeSample_year"]
+
+for u in jes_uncert_names:
+  if 'year' not in u:
+    cb.cp().channel(['mt']).process(['QCD'],False).AddSyst(cb, "CMS_scale_j_%(u)s" % vars(), "shape", ch.SystMap()(1.00))
+  else: 
+    for era in eras: cb.cp().channel(['mt']).era([era]).process(['QCD'],False).AddSyst(cb, "CMS_scale_j_%s" % u.replace('year',era.split('_')[0]), "shape", ch.SystMap()(1.00))
+
 
 # jet-tau fake-rate in MC - not for W as this will float in the fit
 cb.cp().channel(['mt']).process(['TTJ','VVJ','ZJ']).bin_id(inclusive_bins).AddSyst(cb, "CMS_j_fake_t", "lnN", ch.SystMap()(1.2))
@@ -149,17 +189,16 @@ cb.cp().channel(['mt']).process(['TTJ','VVJ','ZJ']).bin_id(dm0_bins).AddSyst(cb,
 cb.cp().channel(['mt']).process(['TTJ','VVJ','ZJ']).bin_id(dm1_bins).AddSyst(cb, "CMS_j_fake_t_DM1", "lnN", ch.SystMap()(1.2))
 cb.cp().channel(['mt']).process(['TTJ','VVJ','ZJ']).bin_id(dm10_bins).AddSyst(cb, "CMS_j_fake_t_DM10", "lnN", ch.SystMap()(1.2))
 cb.cp().channel(['mt']).process(['TTJ','VVJ','ZJ']).bin_id(dm11_bins).AddSyst(cb, "CMS_j_fake_t_DM11", "lnN", ch.SystMap()(1.2))
-# add a part decoupled by pT bin
+# add a part decoupled by pT/mT bin
 cb.cp().channel(['mt']).process(['TTJ','VVJ','ZJ']).AddSyst(cb, "CMS_j_fake_t_$BIN_$ERA", "lnN", ch.SystMap()(1.2))
 
 
-# to do - split this by DM for the dm-binned fits!! - might want to split by pT as well 
 cb.cp().channel(['mt']).process(['ZL']).bin_id(inclusive_bins).AddSyst(cb, "CMS_l_fake_t", "lnN", ch.SystMap()(1.3))
 cb.cp().channel(['mt']).process(['ZL']).bin_id(dm0_bins).AddSyst(cb, "CMS_l_fake_t_DM0", "lnN", ch.SystMap()(1.3))
 cb.cp().channel(['mt']).process(['ZL']).bin_id(dm0_bins).AddSyst(cb, "CMS_l_fake_t_DM1", "lnN", ch.SystMap()(1.3))
 cb.cp().channel(['mt']).process(['ZL']).bin_id(dm10_bins).AddSyst(cb, "CMS_l_fake_t_DM10", "lnN", ch.SystMap()(1.3))
 cb.cp().channel(['mt']).process(['ZL']).bin_id(dm11_bins).AddSyst(cb, "CMS_l_fake_t_DM11", "lnN", ch.SystMap()(1.3))
-# add a part decoupled by pT bin
+# add a part decoupled by pT/mT bin
 cb.cp().channel(['mt']).process(['ZL']).AddSyst(cb, "CMS_l_fake_t_$BIN_$ERA", "lnN", ch.SystMap()(1.3))
 
 # now add unconstrained rate parameters
@@ -169,15 +208,15 @@ cb.cp().channel(['mt']).process(['ZL']).AddSyst(cb, "CMS_l_fake_t_$BIN_$ERA", "l
 cb.cp().channel(['zmm']).AddSyst(cb, "rate_DY_$ERA","rateParam",ch.SystMap()(1.0))
 cb.cp().channel(['mt']).process(["ZTT","TTT","VVT","ZL","TTJ","VVJ"]).AddSyst(cb, "rate_DY_$ERA","rateParam",ch.SystMap()(1.0))
 
-cb.cp().channel(['mt']).process(["ZTT", "TTT", "VVT"]).bin_id([1]).AddSyst(cb, "rate_tauSF_DMinclusive_pT20to25_$ERA","rateParam",ch.SystMap()(1.0))
-cb.cp().channel(['mt']).process(["ZTT", "TTT", "VVT"]).bin_id([2]).AddSyst(cb, "rate_tauSF_DMinclusive_pT25to30_$ERA","rateParam",ch.SystMap()(1.0))
-cb.cp().channel(['mt']).process(["ZTT", "TTT", "VVT"]).bin_id([3]).AddSyst(cb, "rate_tauSF_DMinclusive_pT30to35_$ERA","rateParam",ch.SystMap()(1.0))
-cb.cp().channel(['mt']).process(["ZTT", "TTT", "VVT"]).bin_id([4]).AddSyst(cb, "rate_tauSF_DMinclusive_pT35to40_$ERA","rateParam",ch.SystMap()(1.0))
-cb.cp().channel(['mt']).process(["ZTT", "TTT", "VVT"]).bin_id([5]).AddSyst(cb, "rate_tauSF_DMinclusive_pT40to50_$ERA","rateParam",ch.SystMap()(1.0))
-cb.cp().channel(['mt']).process(["ZTT", "TTT", "VVT"]).bin_id([6]).AddSyst(cb, "rate_tauSF_DMinclusive_pT50to60_$ERA","rateParam",ch.SystMap()(1.0))
-cb.cp().channel(['mt']).process(["ZTT", "TTT", "VVT"]).bin_id([7]).AddSyst(cb, "rate_tauSF_DMinclusive_pT60to80_$ERA","rateParam",ch.SystMap()(1.0))
-cb.cp().channel(['mt']).process(["ZTT", "TTT", "VVT"]).bin_id([8]).AddSyst(cb, "rate_tauSF_DMinclusive_pT80to100_$ERA","rateParam",ch.SystMap()(1.0))
-cb.cp().channel(['mt']).process(["ZTT", "TTT", "VVT"]).bin_id([9]).AddSyst(cb, "rate_tauSF_DMinclusive_pT100to200_$ERA","rateParam",ch.SystMap()(1.0))
+cb.cp().channel(['mt']).process(["ZTT", "TTT", "VVT"]).bin_id([1,11]).AddSyst(cb, "rate_tauSF_DMinclusive_pT20to25_$ERA","rateParam",ch.SystMap()(1.0))
+cb.cp().channel(['mt']).process(["ZTT", "TTT", "VVT"]).bin_id([2,12]).AddSyst(cb, "rate_tauSF_DMinclusive_pT25to30_$ERA","rateParam",ch.SystMap()(1.0))
+cb.cp().channel(['mt']).process(["ZTT", "TTT", "VVT"]).bin_id([3,13]).AddSyst(cb, "rate_tauSF_DMinclusive_pT30to35_$ERA","rateParam",ch.SystMap()(1.0))
+cb.cp().channel(['mt']).process(["ZTT", "TTT", "VVT"]).bin_id([4,14]).AddSyst(cb, "rate_tauSF_DMinclusive_pT35to40_$ERA","rateParam",ch.SystMap()(1.0))
+cb.cp().channel(['mt']).process(["ZTT", "TTT", "VVT"]).bin_id([5,15]).AddSyst(cb, "rate_tauSF_DMinclusive_pT40to50_$ERA","rateParam",ch.SystMap()(1.0))
+cb.cp().channel(['mt']).process(["ZTT", "TTT", "VVT"]).bin_id([6,16]).AddSyst(cb, "rate_tauSF_DMinclusive_pT50to60_$ERA","rateParam",ch.SystMap()(1.0))
+cb.cp().channel(['mt']).process(["ZTT", "TTT", "VVT"]).bin_id([7,17]).AddSyst(cb, "rate_tauSF_DMinclusive_pT60to80_$ERA","rateParam",ch.SystMap()(1.0))
+cb.cp().channel(['mt']).process(["ZTT", "TTT", "VVT"]).bin_id([8,18]).AddSyst(cb, "rate_tauSF_DMinclusive_pT80to100_$ERA","rateParam",ch.SystMap()(1.0))
+cb.cp().channel(['mt']).process(["ZTT", "TTT", "VVT"]).bin_id([9,19]).AddSyst(cb, "rate_tauSF_DMinclusive_pT100to200_$ERA","rateParam",ch.SystMap()(1.0))
 
 for i, dm in enumerate([0,1,10,11]):
   cb.cp().channel(['mt']).process(["ZTT", "TTT", "VVT"]).bin_id([(i+1)*100+1]).AddSyst(cb, "rate_tauSF_DM%i_pT20to25_$ERA" % dm,"rateParam",ch.SystMap()(1.0))
@@ -189,6 +228,16 @@ for i, dm in enumerate([0,1,10,11]):
   cb.cp().channel(['mt']).process(["ZTT", "TTT", "VVT"]).bin_id([(i+1)*100+7]).AddSyst(cb, "rate_tauSF_DM%i_pT60to80_$ERA" % dm,"rateParam",ch.SystMap()(1.0))
   cb.cp().channel(['mt']).process(["ZTT", "TTT", "VVT"]).bin_id([(i+1)*100+8]).AddSyst(cb, "rate_tauSF_DM%i_pT80to100_$ERA" % dm,"rateParam",ch.SystMap()(1.0))
   cb.cp().channel(['mt']).process(["ZTT", "TTT", "VVT"]).bin_id([(i+1)*100+9]).AddSyst(cb, "rate_tauSF_DM%i_pT100to200_$ERA" % dm,"rateParam",ch.SystMap()(1.0))
+
+  cb.cp().channel(['mt']).process(["ZTT", "TTT", "VVT"]).bin_id([(i+1)*100+11]).AddSyst(cb, "rate_tauSF_DM%i_pT20to25_$ERA" % dm,"rateParam",ch.SystMap()(1.0))
+  cb.cp().channel(['mt']).process(["ZTT", "TTT", "VVT"]).bin_id([(i+1)*100+12]).AddSyst(cb, "rate_tauSF_DM%i_pT25to30_$ERA" % dm,"rateParam",ch.SystMap()(1.0))
+  cb.cp().channel(['mt']).process(["ZTT", "TTT", "VVT"]).bin_id([(i+1)*100+13]).AddSyst(cb, "rate_tauSF_DM%i_pT30to35_$ERA" % dm,"rateParam",ch.SystMap()(1.0))
+  cb.cp().channel(['mt']).process(["ZTT", "TTT", "VVT"]).bin_id([(i+1)*100+14]).AddSyst(cb, "rate_tauSF_DM%i_pT35to40_$ERA" % dm,"rateParam",ch.SystMap()(1.0))
+  cb.cp().channel(['mt']).process(["ZTT", "TTT", "VVT"]).bin_id([(i+1)*100+15]).AddSyst(cb, "rate_tauSF_DM%i_pT40to50_$ERA" % dm,"rateParam",ch.SystMap()(1.0))
+  cb.cp().channel(['mt']).process(["ZTT", "TTT", "VVT"]).bin_id([(i+1)*100+16]).AddSyst(cb, "rate_tauSF_DM%i_pT50to60_$ERA" % dm,"rateParam",ch.SystMap()(1.0))
+  cb.cp().channel(['mt']).process(["ZTT", "TTT", "VVT"]).bin_id([(i+1)*100+17]).AddSyst(cb, "rate_tauSF_DM%i_pT60to80_$ERA" % dm,"rateParam",ch.SystMap()(1.0))
+  cb.cp().channel(['mt']).process(["ZTT", "TTT", "VVT"]).bin_id([(i+1)*100+18]).AddSyst(cb, "rate_tauSF_DM%i_pT80to100_$ERA" % dm,"rateParam",ch.SystMap()(1.0))
+  cb.cp().channel(['mt']).process(["ZTT", "TTT", "VVT"]).bin_id([(i+1)*100+19]).AddSyst(cb, "rate_tauSF_DM%i_pT100to200_$ERA" % dm,"rateParam",ch.SystMap()(1.0))
 
 #single rate parameters for QCD and W+jets
 cb.cp().channel(['mt']).process(["QCD"]).bin_id(inclusive_bins).AddSyst(cb, "rate_QCD_$ERA","rateParam",ch.SystMap()(1.0))
@@ -206,9 +255,13 @@ cb.cp().channel(['mt']).process(["W"]).bin_id(dm10_bins).AddSyst(cb, "rate_W_DM1
 cb.cp().channel(['mt']).process(["QCD"]).bin_id(dm11_bins).AddSyst(cb, "rate_QCD_DM11_$ERA","rateParam",ch.SystMap()(1.0))
 cb.cp().channel(['mt']).process(["W"]).bin_id(dm11_bins).AddSyst(cb, "rate_W_DM11_$ERA","rateParam",ch.SystMap()(1.0))
 
-# additional uncorrelated rate uncertainties to account for different extrapolations per pT bin
+# additional uncorrelated rate uncertainties to account for different extrapolations per pT/mT bin
 cb.cp().channel(['mt']).process(['W']).AddSyst(cb, "CMS_W_extrap_$BIN_$ERA", "lnN", ch.SystMap()(1.1))
 cb.cp().channel(['mt']).process(['QCD']).AddSyst(cb, "CMS_QCD_extrap_$BIN_$ERA", "lnN", ch.SystMap()(1.1))
+
+#shape uncertainties affecting W+jets:
+# for W+jets a shape uncertainty due to the energy scale of the j->tauh fakes, we assume a 50% correlation for this syst so we add it scaled by 1/sqrt(2) and then we will clone it later for each era so that adding the correlated and uncorrelated parts in quadrature will equal 1 
+cb.cp().channel(['mt']).process(['W']).AddSyst(cb, "CMS_scale_jfake", "shape", ch.SystMap()(0.707))
 
 # set sensible ranges for all rate params
 for era in eras:
@@ -222,6 +275,12 @@ for chn in channels:
     print('%s, %s' % (chn, era))
     cb.cp().channel([chn]).process(bkg_procs[chn]).era([era]).ExtractShapes(filename, "$BIN/$PROCESS", "$BIN/$PROCESS_$SYSTEMATIC")
     if chn == 'mt': cb.cp().channel([chn]).process(sig_procs).era([era]).ExtractShapes(filename, "$BIN/$PROCESS", "$BIN/$PROCESS_$SYSTEMATIC")
+
+# now we clone the j->tauh energy scale uncertainties for each era to ensure they are correlated and uncorrelated components of equal magnitudes (i.e a 50% correlation between eras)
+
+for era in eras:
+  cb_syst = cb.cp().era([era]).syst_name(['CMS_scale_jfake'])
+  ch.CloneSysts(cb_syst, cb, lambda x: x.set_name('CMS_scale_jfake_'+era))
 
 # Merge to one bin for Z->mumu CRs
 for b in cb.cp().channel(['zmm']).bin_set():
@@ -243,6 +302,13 @@ cb.cp().channel(['zmm']).syst_type(["shape"]).ForEachSyst(lambda sys: sys.set_ty
 for era in eras:
   cb.cp().channel(['mt']).syst_name(['CMS_scale_j_%s' % era,'CMS_res_j_%s' % era, 'CMS_scale_met_unclustered_%s' % era]).syst_type(["shape"]).ForEachSyst(lambda sys: sys.set_type('lnN'))
 
+for u in jes_uncert_names:
+  if 'year' not in u:
+    cb.cp().channel(['mt']).syst_name(['CMS_scale_j_%s' % u]).syst_type(["shape"]).ForEachSyst(lambda sys: sys.set_type('lnN'))
+  else:
+    for era in eras: cb.cp().channel(['mt']).syst_name(["CMS_scale_j_%s" % u.replace('year',era.split('_')[0])]).syst_type(["shape"]).ForEachSyst(lambda sys: sys.set_type('lnN'))
+
+
 def SetSystToOne(syst):
   if syst.value_u()<=0.: syst.set_value_u(1.)
   if syst.asymm() and syst.value_d() <=0: syst.set_value_d(1.)
@@ -258,9 +324,33 @@ SetStandardBinNames(cb)
 cb.SetAutoMCStats(cb, 0., 1, 1)
 
 # define groups - this will help determine correlated uncertainties later on
+# add a group for systematics that are correlated by bins and by eras
 
-#cb.AddDatacardLineAtEnd("byYearsandBins group = CMS_eff_m")
-#cb.AddDatacardLineAtEnd("byBins group = rate_DY_2016_postVFP rate_DY_2016_preVFP")
+#if not dm_bins: 
+#  cb.AddDatacardLineAtEnd("byErasAndBins group = CMS_eff_m CMS_scale_j_Absolute CMS_scale_j_BBEC1 CMS_scale_j_EC2 CMS_scale_j_FlavorQCD CMS_scale_j_HF CMS_scale_j_RelativeBal CMS_j_fake_m CMS_htt_vvXsec CMS_htt_tjXsec CMS_htt_dyShape CMS_htt_ttbarShape CMS_j_fake_t CMS_l_fake_t CMS_scale_jfake")
+#  # add a group for systematics that are correlated by bins (excluding the uncertainties from the bins and eras group)
+#  systs_for_group = ["CMS_scale_t_1prong", "CMS_scale_t_1prong1pizero", "CMS_scale_t_3prong", "CMS_scale_t_3prong1pizero", "CMS_ZLShape_mt_1prong", "CMS_ZLShape_mt_1prong1pizero", "CMS_res_j", "CMS_scale_met_unclustered", "CMS_scale_j_Absolute_year", "CMS_scale_j_BBEC1_year", "CMS_scale_j_EC2_year", "CMS_scale_j_HF_year", "CMS_scale_j_RelativeSample_year", "rate_DY", "rate_QCD", "rate_W", "CMS_scale_jfake"]
+#
+#  group_str = 'byBins group ='
+#  for s in systs_for_group:
+#    if s.endswith('_year'):
+#      for year in ['2016','2017','2018']: group_str+=' %s' % s.replace('year',year)
+#    else:
+#      for era in eras: group_str+=' %s_%s' % (s,era)
+#  cb.AddDatacardLineAtEnd(group_str)
+#
+#else:
+#  cb.AddDatacardLineAtEnd("byErasAndBins group = CMS_eff_m CMS_scale_j_Absolute CMS_scale_j_BBEC1 CMS_scale_j_EC2 CMS_scale_j_FlavorQCD CMS_scale_j_HF CMS_scale_j_RelativeBal CMS_j_fake_m CMS_htt_vvXsec CMS_htt_tjXsec CMS_htt_dyShape CMS_htt_ttbarShape CMS_j_fake_t_DM0 CMS_j_fake_t_DM1 CMS_j_fake_t_DM10 CMS_j_fake_t_DM11 CMS_l_fake_t_DM0 CMS_l_fake_t_DM1 CMS_l_fake_t_DM10 CMS_l_fake_t_DM11 CMS_scale_jfake")
+#  # add a group for systematics that are correlated by bins (excluding the uncertainties from the bins and eras group)
+#  systs_for_group = ["CMS_scale_t_1prong", "CMS_scale_t_1prong1pizero", "CMS_scale_t_3prong", "CMS_scale_t_3prong1pizero", "CMS_ZLShape_mt_1prong", "CMS_ZLShape_mt_1prong1pizero", "CMS_res_j", "CMS_scale_met_unclustered", "CMS_scale_j_Absolute_year", "CMS_scale_j_BBEC1_year", "CMS_scale_j_EC2_year", "CMS_scale_j_HF_year", "CMS_scale_j_RelativeSample_year", "rate_DY", "rate_QCD", "rate_W", "rate_QCD_DM0", "rate_QCD_DM1", "rate_QCD_DM10", "rate_QCD_DM11", "rate_W_DM0", "rate_W_DM1", "rate_W_DM10", "rate_W_DM11", "CMS_scale_jfake"]
+#
+#  group_str = 'byBins group ='
+#  for s in systs_for_group:
+#    if s.endswith('_year'): 
+#      for year in ['2016','2017','2018']: group_str+=' %s' % s.replace('year',year)
+#    else: 
+#      for era in eras: group_str+=' %s_%s' % (s,era)
+#  cb.AddDatacardLineAtEnd(group_str)
 
 # Write datacards
 print green(">>> writing datacards...")
