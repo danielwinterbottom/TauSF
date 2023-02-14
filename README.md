@@ -106,6 +106,14 @@ plotImpacts.py -i impacts.json -o impacts
 
 ## Make TGraphAsymmErrors for fitted results. For dm-binned SF use option --dm-bins - this will also perform fits of the SFs vs pT 
 
+Produce the graphs:
+
 ```bash
 python scripts/makeSFGraphs.py -f outputs/tauSF_Feb08_DMinclusive_tightVsE_mTLt30/cmb/higgsCombine.ztt.bestfit.singles.MultiDimFit.mH125.root
+```
+
+for pT-dependent SF you can also make a plot of the graphs after running the previous script using:
+
+```bash
+python scripts/plotInclusiveSF.py -f outputs/tauSF_Feb08_DMinclusive_tightVsE_mTLt30/cmb/higgsCombine.ztt.bestfit.singles.MultiDimFit.mH125.TGraphAsymmErrors.root
 ```
