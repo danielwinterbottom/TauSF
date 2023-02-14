@@ -67,10 +67,6 @@ combineTool.py -M T2W -i outputs/tauSF_output/cmb/ -o ws.root --X-allow-no-signa
 
 ## Run fits 
 
-```bash
-combineTool.py -m 125 -M MultiDimFit --redefineSignalPOIs rate_tauSF_DMinclusive_pT20to25_2018 --saveFitResult -d outputs/tauSF_output/cmb/ws.root --there -n ".ztt.bestfit"  --X-rtd MINIMIZER_analytic --expectSignal 0 --cminDefaultMinimizerStrategy 0 --cminDefaultMinimizerTolerance 0.1 --robustHesse
-```
-
 Run fits to determine proper values and errors of all POIs
 
 When using DM-binned fits define POIs with:
@@ -94,7 +90,7 @@ combineTool.py -m 125 -M MultiDimFit --redefineSignalPOIs "${pois}" --saveWorksp
 
 For decomposition of the uncertainties into groups that allow uncertainties to be correlated by era and by bins we need to run the following additional fits:
 
-....
+.... add these to the instructions ...
 
 Once the fits are run it is also possible to make a summary plot of the uncertainty magnitudes using:
 
@@ -103,6 +99,30 @@ scripts/compareSFUncerts.py
 ```
 
 Note the names of the graphs are currently hardcoded in this script
+
+## Run postfit plots
+
+First need to run a fit and store the fit result. We use the robustHesse option to make sure the covariance matrix is accurate 
+
+```bash
+combineTool.py -m 125 -M MultiDimFit --redefineSignalPOIs "${pois}" --saveFitResult --X-rtd MINIMIZER_analytic --expectSignal 0 --cminDefaultMinimizerStrategy 0 --cminDefaultMinimizerTolerance 0.1 --algo none --there -n ".ztt.bestfit.singles.robustHesse" -d outputs/tauSF_Feb08_DMinclusive_mTLt30/cmb/ws.root --robustHesse=1
+``` 
+
+Make the histograms containing the postfit shapes.
+Note this script only computes the uncertainties for the TotalBkg histogram not for the individual processes to save time (note ZTT is included as background in the current setup)
+
+```bash
+python python/PostFitShapesCombEras.py -f outputs/tauSF_Feb08_DMinclusive_mTLt30/cmb/multidimfit.ztt.bestfit.singles.robustHesse.root:fit_mdf -w outputs/tauSF_Feb08_DMinclusive_mTLt30/cmb/ws.root -d outputs/tauSF_Feb08_DMinclusive_mTLt30/cmb/combined.txt.cmb --output shapes_postfit.root
+```
+You can optionally use the option "-b" to only specify one bin at a time allowing the shapes to be run parallel e.g "-b ztt_mt_1_2018"
+
+Make the plots by running the script "scripts/postFitPlots.py"
+
+e.g to make the plots for all eras and pT-dependent bins:
+
+```bash
+for b in 1 2 3 4 5 6 7 8 9; do for era in 2016_preVFP 2016_postVFP 2017 2018; do python scripts/postFitPlots.py --file shapes_postfit.root --file_dir ztt_mt_${b}_${era} --ratio --ratio_range 0.8,1.2; done; done
+```
 
 ## Run impacts (approximate)
 
