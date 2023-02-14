@@ -13,10 +13,8 @@ description = '''This script makes datacards with CombineHarvester for performin
 parser = ArgumentParser(prog="harvesterDatacards",description=description,epilog="Success!")
 parser.add_argument('-c', '--config', dest='config', type=str, default='config/harvestDatacards.yml', action='store', help="set config file")
 parser.add_argument('--dm-bins', dest='dm_bins', default=False, action='store_true', help="if specified then the mu+tauh channel fits are also split by tau decay-mode")
-parser.add_argument('--fit-mTGt30', dest='fit_mTGt30', default=False, action='store_true', help="if specified then include the mT>30 categories in the fit to mitigate the sensitivity to mT cut")
 args = parser.parse_args()
 dm_bins=args.dm_bins
-fit_mTGt30=args.fit_mTGt30
 
 with open(args.config, 'r') as file:
    setup = yaml.safe_load(file)
@@ -76,18 +74,6 @@ if dm_bins:
      ((i+1)*100+8, 'mt_dm%i_mTLt30_pT_80_to_100' % dm),
      ((i+1)*100+9, 'mt_dm%i_mTLt30_pT_100_to_200' % dm),
     ]
-  if fit_mTGt30:
-      cats['mt'] += [
-       ((i+1)*100+11,  'mt_dm%i_mTGt30_pT_20_to_25' % dm),
-       ((i+1)*100+12,  'mt_dm%i_mTGt30_pT_25_to_30' % dm),
-       ((i+1)*100+13,  'mt_dm%i_mTGt30_pT_30_to_35' % dm),
-       ((i+1)*100+14,  'mt_dm%i_mTGt30_pT_35_to_40' % dm),
-       ((i+1)*100+15,  'mt_dm%i_mTGt30_pT_40_to_50' % dm),
-       ((i+1)*100+16,  'mt_dm%i_mTGt30_pT_50_to_60' % dm),
-       ((i+1)*100+17,  'mt_dm%i_mTGt30_pT_60_to_80' % dm),
-       ((i+1)*100+18,  'mt_dm%i_mTGt30_pT_80_to_100' % dm),
-       ((i+1)*100+19,  'mt_dm%i_mTGt30_pT_100_to_200' % dm),
-      ]
 else:
 
   cats['mt'] = [
@@ -101,19 +87,6 @@ else:
                (8, 'mt_inclusive_mTLt30_pT_80_to_100'),
                (9, 'mt_inclusive_mTLt30_pT_100_to_200'), 
   ]
-  
-  if fit_mTGt30:
-    cats['mt']  +=[
-                 (11, 'mt_inclusive_mTGt30_pT_20_to_25'),
-                 (12, 'mt_inclusive_mTGt30_pT_25_to_30'),
-                 (13, 'mt_inclusive_mTGt30_pT_30_to_35'),
-                 (14, 'mt_inclusive_mTGt30_pT_35_to_40'),
-                 (15, 'mt_inclusive_mTGt30_pT_40_to_50'),
-                 (16, 'mt_inclusive_mTGt30_pT_50_to_60'),
-                 (17, 'mt_inclusive_mTGt30_pT_60_to_80'),
-                 (18, 'mt_inclusive_mTGt30_pT_80_to_100'),
-                 (19, 'mt_inclusive_mTGt30_pT_100_to_200'),
-    ]
 
 # Create an empty CombineHarvester instance
 cb = CombineHarvester()
@@ -270,7 +243,7 @@ for era in eras:
 # Populating Observation, Process and Systematic entries in the harvester instance
 for chn in channels:
   for era in eras:
-    filename = 'shapes/ztt.datacard.m_vis.%s.%s.root' % (chn,era)
+    filename = 'shapes_tightVsE/ztt.datacard.m_vis.%s.%s.root' % (chn,era)
     print ">>>   file %s" % (filename)
     print('%s, %s' % (chn, era))
     cb.cp().channel([chn]).process(bkg_procs[chn]).era([era]).ExtractShapes(filename, "$BIN/$PROCESS", "$BIN/$PROCESS_$SYSTEMATIC")
@@ -282,6 +255,20 @@ for era in eras:
   cb_syst = cb.cp().era([era]).syst_name(['CMS_scale_jfake'])
   ch.CloneSysts(cb_syst, cb, lambda x: x.set_name('CMS_scale_jfake_'+era))
 
+# split j->tauh energy scale uncertainties by dm-bins
+if dm_bins:
+  cb.cp().bin_id(dm0_bins).RenameSystematic(cb,'CMS_scale_jfake','CMS_scale_jfake_DM0') 
+  cb.cp().bin_id(dm1_bins).RenameSystematic(cb,'CMS_scale_jfake','CMS_scale_jfake_DM1')
+  cb.cp().bin_id(dm10_bins).RenameSystematic(cb,'CMS_scale_jfake','CMS_scale_jfake_DM10')
+  cb.cp().bin_id(dm11_bins).RenameSystematic(cb,'CMS_scale_jfake','CMS_scale_jfake_DM11')
+  
+  for era in eras:
+    cb.cp().bin_id(dm0_bins).RenameSystematic(cb,'CMS_scale_jfake_%s' % era,'CMS_scale_jfake_DM0_%s' % era) 
+    cb.cp().bin_id(dm1_bins).RenameSystematic(cb,'CMS_scale_jfake_%s' % era,'CMS_scale_jfake_DM1_%s' % era)
+    cb.cp().bin_id(dm10_bins).RenameSystematic(cb,'CMS_scale_jfake_%s' % era,'CMS_scale_jfake_DM10_%s' % era)
+    cb.cp().bin_id(dm11_bins).RenameSystematic(cb,'CMS_scale_jfake_%s' % era,'CMS_scale_jfake_DM11_%s' % era)
+
+  
 # Merge to one bin for Z->mumu CRs
 for b in cb.cp().channel(['zmm']).bin_set():
   print("Rebinning Z->mumu CRs into 1-bin categories")
@@ -326,31 +313,26 @@ cb.SetAutoMCStats(cb, 0., 1, 1)
 # define groups - this will help determine correlated uncertainties later on
 # add a group for systematics that are correlated by bins and by eras
 
-#if not dm_bins: 
-#  cb.AddDatacardLineAtEnd("byErasAndBins group = CMS_eff_m CMS_scale_j_Absolute CMS_scale_j_BBEC1 CMS_scale_j_EC2 CMS_scale_j_FlavorQCD CMS_scale_j_HF CMS_scale_j_RelativeBal CMS_j_fake_m CMS_htt_vvXsec CMS_htt_tjXsec CMS_htt_dyShape CMS_htt_ttbarShape CMS_j_fake_t CMS_l_fake_t CMS_scale_jfake")
-#  # add a group for systematics that are correlated by bins (excluding the uncertainties from the bins and eras group)
-#  systs_for_group = ["CMS_scale_t_1prong", "CMS_scale_t_1prong1pizero", "CMS_scale_t_3prong", "CMS_scale_t_3prong1pizero", "CMS_ZLShape_mt_1prong", "CMS_ZLShape_mt_1prong1pizero", "CMS_res_j", "CMS_scale_met_unclustered", "CMS_scale_j_Absolute_year", "CMS_scale_j_BBEC1_year", "CMS_scale_j_EC2_year", "CMS_scale_j_HF_year", "CMS_scale_j_RelativeSample_year", "rate_DY", "rate_QCD", "rate_W", "CMS_scale_jfake"]
-#
-#  group_str = 'byBins group ='
-#  for s in systs_for_group:
-#    if s.endswith('_year'):
-#      for year in ['2016','2017','2018']: group_str+=' %s' % s.replace('year',year)
-#    else:
-#      for era in eras: group_str+=' %s_%s' % (s,era)
-#  cb.AddDatacardLineAtEnd(group_str)
-#
-#else:
-#  cb.AddDatacardLineAtEnd("byErasAndBins group = CMS_eff_m CMS_scale_j_Absolute CMS_scale_j_BBEC1 CMS_scale_j_EC2 CMS_scale_j_FlavorQCD CMS_scale_j_HF CMS_scale_j_RelativeBal CMS_j_fake_m CMS_htt_vvXsec CMS_htt_tjXsec CMS_htt_dyShape CMS_htt_ttbarShape CMS_j_fake_t_DM0 CMS_j_fake_t_DM1 CMS_j_fake_t_DM10 CMS_j_fake_t_DM11 CMS_l_fake_t_DM0 CMS_l_fake_t_DM1 CMS_l_fake_t_DM10 CMS_l_fake_t_DM11 CMS_scale_jfake")
-#  # add a group for systematics that are correlated by bins (excluding the uncertainties from the bins and eras group)
-#  systs_for_group = ["CMS_scale_t_1prong", "CMS_scale_t_1prong1pizero", "CMS_scale_t_3prong", "CMS_scale_t_3prong1pizero", "CMS_ZLShape_mt_1prong", "CMS_ZLShape_mt_1prong1pizero", "CMS_res_j", "CMS_scale_met_unclustered", "CMS_scale_j_Absolute_year", "CMS_scale_j_BBEC1_year", "CMS_scale_j_EC2_year", "CMS_scale_j_HF_year", "CMS_scale_j_RelativeSample_year", "rate_DY", "rate_QCD", "rate_W", "rate_QCD_DM0", "rate_QCD_DM1", "rate_QCD_DM10", "rate_QCD_DM11", "rate_W_DM0", "rate_W_DM1", "rate_W_DM10", "rate_W_DM11", "CMS_scale_jfake"]
-#
-#  group_str = 'byBins group ='
-#  for s in systs_for_group:
-#    if s.endswith('_year'): 
-#      for year in ['2016','2017','2018']: group_str+=' %s' % s.replace('year',year)
-#    else: 
-#      for era in eras: group_str+=' %s_%s' % (s,era)
-#  cb.AddDatacardLineAtEnd(group_str)
+if not dm_bins: 
+  cb.AddDatacardLineAtEnd("byErasAndBins group = CMS_eff_m CMS_scale_j_Absolute CMS_scale_j_BBEC1 CMS_scale_j_EC2 CMS_scale_j_FlavorQCD CMS_scale_j_HF CMS_scale_j_RelativeBal CMS_j_fake_m CMS_htt_vvXsec CMS_htt_tjXsec CMS_htt_dyShape CMS_htt_ttbarShape CMS_j_fake_t CMS_l_fake_t CMS_scale_jfake")
+  # add a group for systematics that are correlated by bins (excluding the uncertainties from the bins and eras group)
+  systs_for_group = ["CMS_scale_t_1prong", "CMS_scale_t_1prong1pizero", "CMS_scale_t_3prong", "CMS_scale_t_3prong1pizero", "CMS_ZLShape_mt_1prong", "CMS_ZLShape_mt_1prong1pizero", "CMS_res_j", "CMS_scale_met_unclustered", "CMS_scale_j_Absolute_year", "CMS_scale_j_BBEC1_year", "CMS_scale_j_EC2_year", "CMS_scale_j_HF_year", "CMS_scale_j_RelativeSample_year", "rate_DY", "rate_QCD", "rate_W", "CMS_scale_jfake"]
+else:
+  cb.AddDatacardLineAtEnd("byErasAndBins group = CMS_eff_m CMS_scale_j_Absolute CMS_scale_j_BBEC1 CMS_scale_j_EC2 CMS_scale_j_FlavorQCD CMS_scale_j_HF CMS_scale_j_RelativeBal CMS_j_fake_m CMS_htt_vvXsec CMS_htt_tjXsec CMS_htt_dyShape CMS_htt_ttbarShape CMS_j_fake_t_DM0 CMS_j_fake_t_DM1 CMS_j_fake_t_DM10 CMS_j_fake_t_DM11 CMS_l_fake_t_DM0 CMS_l_fake_t_DM1 CMS_l_fake_t_DM10 CMS_l_fake_t_DM11 CMS_scale_jfake_DM0 CMS_scale_jfake_DM1 CMS_scale_jfake_DM10 CMS_scale_jfake_DM11")
+  # add a group for systematics that are correlated by bins (excluding the uncertainties from the bins and eras group)
+  systs_for_group = ["CMS_scale_t_1prong", "CMS_scale_t_1prong1pizero", "CMS_scale_t_3prong", "CMS_scale_t_3prong1pizero", "CMS_ZLShape_mt_1prong", "CMS_ZLShape_mt_1prong1pizero", "CMS_res_j", "CMS_scale_met_unclustered", "CMS_scale_j_Absolute_year", "CMS_scale_j_BBEC1_year", "CMS_scale_j_EC2_year", "CMS_scale_j_HF_year", "CMS_scale_j_RelativeSample_year", "rate_DY", "rate_QCD_DM0", "rate_QCD_DM1", "rate_QCD_DM10", "rate_QCD_DM11", "rate_W_DM0", "rate_W_DM1", "rate_W_DM10", "rate_W_DM11", "CMS_scale_jfake_DM0", "CMS_scale_jfake_DM1", "CMS_scale_jfake_DM10", "CMS_scale_jfake_DM11"]
+
+group_str = 'byBins group ='
+for s in systs_for_group:
+  if s.endswith('_year'): 
+    for era in eras: 
+      year = era.split('_')[0]
+      if s.replace('year',year) not in group_str: group_str+=' %s' % s.replace('year',year)
+  else: 
+    for era in eras: group_str+=' %s_%s' % (s,era)
+
+print group_str
+cb.AddDatacardLineAtEnd(group_str)
 
 # Write datacards
 print green(">>> writing datacards...")
