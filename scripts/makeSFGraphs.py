@@ -24,11 +24,53 @@ fout_name = args.file.replace('.root','.TGraphAsymmErrors.root')
 
 l = f.Get('limit')
 
+def DecomposeUncerts(fitresult, fit):
+  # this function decomposes the uncertainties into orthogonal shifts
+  shifted_functions = []
+  # Decompose the covariance matrix into eigenvectors
+  cov = ROOT.TMatrixD(fitresult.GetCovarianceMatrix())
+  eig = ROOT.TMatrixDEigen(cov)
+  eigenvectors = eig.GetEigenVectors()
+
+  # Estimate uncertainty variations based on the eigenvectors
+  pars = ROOT.TVectorD(fit.GetNpar())
+  for i in range(fit.GetNpar()):
+      pars[i] = fit.GetParameter(i)
+  variances = eig.GetEigenValues()
+  transposed_eigenvectors = eigenvectors.Clone().T()
+
+  for i in range(fit.GetNpar()):
+      temp = ROOT.TVectorD(fit.GetNpar())
+      for j in range(fit.GetNpar()):
+          temp[j] = transposed_eigenvectors(i, j)
+
+      temp*=variances(i,i)**0.5
+      fit_up=fit.Clone()  
+      fit_down=fit.Clone() 
+
+      for j in range(fit.GetNpar()): 
+        p_uncert = temp[j] 
+        nom = fit.GetParameter(j)
+        p_up=nom+p_uncert   
+        p_down=nom-p_uncert   
+        fit_up.SetParameter(j,p_up)
+        fit_down.SetParameter(j,p_down)
+        fit_up.SetName(fit.GetName()+'_uncert%i_up' %i)
+        fit_down.SetName(fit.GetName()+'_uncert%i_down' %i)
+
+      shifted_functions.append(('uncert%i' % i, fit_up, fit_down))
+
+  return shifted_functions
+
 def FitSF(h,func='erf'):
   h_uncert = ROOT.TH1D(h.GetName()+'_uncert',"",1000,0,200)
   if func == 'erf':
     f2 = ROOT.TF1("f2","[0]*TMath::Erf((x-[1])/[2])",20.,200.)
     f2.SetParameter(2,40)
+  elif func == 'erf_extra':
+    f2 = ROOT.TF1("f2","([0]+[3]*x)*TMath::Erf((x-[1])/[2])",20.,200.)
+    f2.SetParameter(2,40)
+    f2.SetParameter(3,0)
   elif 'pol' in func:
     f2 = ROOT.TF1("f2",func,20.,200.)
   else:
@@ -50,12 +92,13 @@ def FitSF(h,func='erf'):
     if not rep or count>100:
       ROOT.TVirtualFitter.GetFitter().GetConfidenceIntervals(h_uncert, 0.68)
       fit = f2
+      uncerts = DecomposeUncerts(fitresult, fit)
       break
     count+=1
   fit.SetName(h.GetName()+'_fit')
 
   print 'Chi2/NDF = %.2f/%.0f, p-value = %.2f' % (f2.GetChisquare(), f2.GetNDF(), f2.GetProb())
-  return fit, h_uncert, h
+  return fit, h_uncert, h, uncerts
 
 def PlotSF(f, h, name, title='', output_folder='./'):
   c1 = ROOT.TCanvas()
@@ -160,11 +203,19 @@ for g_val in graph_values:
     gr.SetPointError (n, 0., 0., x[2], x[3])
   fout.cd()
   gr.Write()
-  if 'DM10_2016_postVFP' in gr.GetName() or 'DM0_' in gr.GetName() or '2016_preVFP' in gr.GetName() or 'DM11_2018' in gr.GetName(): fit, h_uncert, h = FitSF(gr,func='pol1')
-  else: fit, h_uncert, h = FitSF(gr,func='erf')
+  if 'DM10_2016_postVFP' in gr.GetName() or 'DM0_' in gr.GetName() or '2016_preVFP' in gr.GetName() or 'DM11_2018' in gr.GetName(): fit, h_uncert, h, uncerts = FitSF(gr,func='pol1')
+  else: fit, h_uncert, h, uncerts = FitSF(gr,func='erf_extra')
+  #else: fit, h_uncert, h, uncerts = FitSF(gr,func='erf')
   gr.Write(gr.GetName()+'_fitted')
   fit.Write()
   h_uncert.Write()
+  name = fit.GetName()
+  for x in uncerts: 
+    x[1].SetName(name+'_%s_up' %x[0]) 
+    x[2].SetName(name+'_%s_down' %x[0])
+    x[1].Write() 
+    x[2].Write() 
+
   dm_binned_strings[gr.GetName()] = str(fit.GetExpFormula('p')).replace('x','min(pt_2,125.)')
   PlotSF(gr, h_uncert, 'fit_'+gr.GetName(), title=gr.GetName(), output_folder='./')
 
