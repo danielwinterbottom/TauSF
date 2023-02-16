@@ -12,6 +12,7 @@ valid_eras = ['2016_preVFP', '2016_postVFP', '2017', '2018', 'all']
 description = '''This script makes datacards with CombineHarvester for performing tau ID SF measurments.'''
 parser = ArgumentParser(prog="harvesterDatacards",description=description,epilog="Success!")
 parser.add_argument('-c', '--config', dest='config', type=str, default='config/harvestDatacards.yml', action='store', help="set config file")
+parser.add_argument('-o', '--output_folder', dest='output_folder', type=str, default='', help="set output folder name")
 parser.add_argument('--dm-bins', dest='dm_bins', default=False, action='store_true', help="if specified then the mu+tauh channel fits are also split by tau decay-mode")
 args = parser.parse_args()
 dm_bins=args.dm_bins
@@ -22,6 +23,7 @@ with open(args.config, 'r') as file:
 output_folder = setup["output_folder"]
 era_tag = setup["eras"]
 
+if args.output_folder: output_folder = args.output_folder
 
 if era_tag == 'all': eras = ['2016_preVFP', '2016_postVFP', '2017', '2018'] # add other eras later
 else: eras = era_tag.split(',')
@@ -243,7 +245,7 @@ for era in eras:
 # Populating Observation, Process and Systematic entries in the harvester instance
 for chn in channels:
   for era in eras:
-    filename = 'shapes_tightVsE/ztt.datacard.m_vis.%s.%s.root' % (chn,era)
+    filename = 'shapes/ztt.datacard.m_vis.%s.%s.root' % (chn,era)
     print ">>>   file %s" % (filename)
     print('%s, %s' % (chn, era))
     cb.cp().channel([chn]).process(bkg_procs[chn]).era([era]).ExtractShapes(filename, "$BIN/$PROCESS", "$BIN/$PROCESS_$SYSTEMATIC")
@@ -320,7 +322,22 @@ if not dm_bins:
 else:
   cb.AddDatacardLineAtEnd("byErasAndBins group = CMS_eff_m CMS_scale_j_Absolute CMS_scale_j_BBEC1 CMS_scale_j_EC2 CMS_scale_j_FlavorQCD CMS_scale_j_HF CMS_scale_j_RelativeBal CMS_j_fake_m CMS_htt_vvXsec CMS_htt_tjXsec CMS_htt_dyShape CMS_htt_ttbarShape CMS_j_fake_t_DM0 CMS_j_fake_t_DM1 CMS_j_fake_t_DM10 CMS_j_fake_t_DM11 CMS_l_fake_t_DM0 CMS_l_fake_t_DM1 CMS_l_fake_t_DM10 CMS_l_fake_t_DM11 CMS_scale_jfake_DM0 CMS_scale_jfake_DM1 CMS_scale_jfake_DM10 CMS_scale_jfake_DM11")
   # add a group for systematics that are correlated by bins (excluding the uncertainties from the bins and eras group)
-  systs_for_group = ["CMS_scale_t_1prong", "CMS_scale_t_1prong1pizero", "CMS_scale_t_3prong", "CMS_scale_t_3prong1pizero", "CMS_ZLShape_mt_1prong", "CMS_ZLShape_mt_1prong1pizero", "CMS_res_j", "CMS_scale_met_unclustered", "CMS_scale_j_Absolute_year", "CMS_scale_j_BBEC1_year", "CMS_scale_j_EC2_year", "CMS_scale_j_HF_year", "CMS_scale_j_RelativeSample_year", "rate_DY", "rate_QCD_DM0", "rate_QCD_DM1", "rate_QCD_DM10", "rate_QCD_DM11", "rate_W_DM0", "rate_W_DM1", "rate_W_DM10", "rate_W_DM11", "CMS_scale_jfake_DM0", "CMS_scale_jfake_DM1", "CMS_scale_jfake_DM10", "CMS_scale_jfake_DM11"]
+  #systs_for_group = ["CMS_scale_t_1prong", "CMS_scale_t_1prong1pizero", "CMS_scale_t_3prong", "CMS_scale_t_3prong1pizero", "CMS_ZLShape_mt_1prong", "CMS_ZLShape_mt_1prong1pizero", "CMS_res_j", "CMS_scale_met_unclustered", "CMS_scale_j_Absolute_year", "CMS_scale_j_BBEC1_year", "CMS_scale_j_EC2_year", "CMS_scale_j_HF_year", "CMS_scale_j_RelativeSample_year", "rate_DY", "rate_QCD_DM0", "rate_QCD_DM1", "rate_QCD_DM10", "rate_QCD_DM11", "rate_W_DM0", "rate_W_DM1", "rate_W_DM10", "rate_W_DM11", "CMS_scale_jfake_DM0", "CMS_scale_jfake_DM1", "CMS_scale_jfake_DM10", "CMS_scale_jfake_DM11"]
+  systs_for_group = ["CMS_res_j", "CMS_scale_met_unclustered", "CMS_scale_j_Absolute_year", "CMS_scale_j_BBEC1_year", "CMS_scale_j_EC2_year", "CMS_scale_j_HF_year", "CMS_scale_j_RelativeSample_year", "rate_DY"]
+  
+  for dm in [0,1,10,11]:
+    if dm==0:  systs = ['CMS_scale_t_1prong','CMS_ZLShape_mt_1prong']
+    if dm==1:  systs = ['CMS_scale_t_1prong1pizero','CMS_ZLShape_mt_1prong1pizero']
+    if dm==10: systs = ['CMS_scale_t_3prong']
+    if dm==11: systs = ['CMS_scale_t_3prong1pizero']
+
+    systs.append('rate_QCD_DM%(dm)s' % vars())
+    systs.append('rate_W_DM%(dm)s' % vars())
+    systs.append('CMS_scale_jfake_DM%(dm)s' % vars())
+    group_str = 'byDM%(dm)s group =' % vars()
+    for s in systs:
+      for era in eras: group_str+=' %s_%s' % (s,era)
+    cb.AddDatacardLineAtEnd(group_str)
 
 group_str = 'byBins group ='
 for s in systs_for_group:
