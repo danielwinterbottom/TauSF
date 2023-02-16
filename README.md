@@ -52,17 +52,23 @@ python scripts/convertDatacards.py -f shapes/ztt.datacard.pt_2_vs_m_vis.mt.2017.
 
 ## Produce txt datacards
 
+Define your output folder:
+
+```bash
+output_dir="tauSF_output"
+```
+
 The various options are set in the config/harvestDatacards.yml config file 
 
 Run the following script to produce the txt datacards
 ```bash
-python scripts/harvestDatacards.py
+python scripts/harvestDatacards.py -o ${output_dir}
 ```
 
 ## Create workspace
 
 ```bash
-combineTool.py -M T2W -i outputs/tauSF_output/cmb/ -o ws.root --X-allow-no-signal
+combineTool.py -M T2W -i outputs/${output_dir}/cmb/ -o ws.root --X-allow-no-signal
 ```
 
 ## Run fits 
@@ -85,12 +91,34 @@ pois="rate_tauSF_DMinclusive_pT20to25_2016_preVFP,rate_tauSF_DMinclusive_pT25to3
 Run the fit with all systematics floating using:
 
 ```bash
-combineTool.py -m 125 -M MultiDimFit --redefineSignalPOIs "${pois}" --saveWorkspace --X-rtd MINIMIZER_analytic --expectSignal 0 --cminDefaultMinimizerStrategy 0 --cminDefaultMinimizerTolerance 0.1 --algo singles --cl=0.68 --there -n ".ztt.bestfit.singles" -d outputs/tauSF_output_DMinclusive_mTLt60_newsysts_v4/cmb/ws.root
+combineTool.py -m 125 -M MultiDimFit --redefineSignalPOIs "${pois}" --saveWorkspace --X-rtd MINIMIZER_analytic --expectSignal 0 --cminDefaultMinimizerStrategy 0 --cminDefaultMinimizerTolerance 0.1 --algo singles --cl=0.68 --there -n ".ztt.bestfit.singles" -d outputs/${output_dir}/cmb/ws.root
 ```
 
 For decomposition of the uncertainties into groups that allow uncertainties to be correlated by era and by bins we need to run the following additional fits:
 
-.... add these to the instructions ...
+First fun a fit loading the snapshot but not freezing any uncertainties
+
+```bash
+combineTool.py -m 125 -M MultiDimFit --redefineSignalPOIs "${pois}" --saveWorkspace --X-rtd MINIMIZER_analytic --expectSignal 0 --cminDefaultMinimizerStrategy 0 --cminDefaultMinimizerTolerance 0.1 --algo singles --cl=0.68 --there -d outputs/${output_dir}/cmb/higgsCombine.ztt.bestfit.singles.MultiDimFit.mH125.root -n ".ztt.bestfit.singles.postfit" --snapshotName MultiDimFit
+```
+
+Then run with uncertainties correlated by era and bins frozen:
+
+```bash
+combineTool.py -m 125 -M MultiDimFit --redefineSignalPOIs "${pois}" --saveWorkspace --X-rtd MINIMIZER_analytic --expectSignal 0 --cminDefaultMinimizerStrategy 0 --cminDefaultMinimizerTolerance 0.1 --algo singles --cl=0.68 --there -d outputs/${output_dir}/cmb/higgsCombine.ztt.bestfit.singles.MultiDimFit.mH125.root -n ".ztt.bestfit.singles.postfit.freeze_byErasAndBins" --snapshotName MultiDimFit  --snapshotName MultiDimFit --freezeNuisanceGroups byErasAndBins
+```
+
+Now run with uncertainties correlated by pT bins and eras frozen as well 
+
+```bash
+combineTool.py -m 125 -M MultiDimFit --redefineSignalPOIs "${pois}" --saveWorkspace --X-rtd MINIMIZER_analytic --expectSignal 0 --cminDefaultMinimizerStrategy 0 --cminDefaultMinimizerTolerance 0.1 --algo singles --cl=0.68 --there -d outputs/${output_dir}/cmb/higgsCombine.ztt.bestfit.singles.MultiDimFit.mH125.root -n ".ztt.bestfit.singles.postfit.freeze_byErasAndBins_byBins" --snapshotName MultiDimFit  --snapshotName MultiDimFit --freezeNuisanceGroups byErasAndBins,byBins
+```
+
+For dm-binned SF only we also need to run this fit:
+
+```bash
+combineTool.py -m 125 -M MultiDimFit --redefineSignalPOIs "${pois}" --saveWorkspace --X-rtd MINIMIZER_analytic --expectSignal 0 --cminDefaultMinimizerStrategy 0 --cminDefaultMinimizerTolerance 0.1 --algo singles --cl=0.68 --there -d outputs/${output_dir}/cmb/higgsCombine.ztt.bestfit.singles.MultiDimFit.mH125.root -n ".ztt.bestfit.singles.postfit.freeze_byErasAndBins_byBins_byDM" --snapshotName MultiDimFit  --snapshotName MultiDimFit --freezeNuisanceGroups byErasAndBins,byBins,byDM0,byDM1,byDM10,byDM11
+```
 
 Once the fits are run it is also possible to make a summary plot of the uncertainty magnitudes using:
 
@@ -105,14 +133,14 @@ Note the names of the graphs are currently hardcoded in this script
 First need to run a fit and store the fit result. We use the robustHesse option to make sure the covariance matrix is accurate 
 
 ```bash
-combineTool.py -m 125 -M MultiDimFit --redefineSignalPOIs "${pois}" --saveFitResult --X-rtd MINIMIZER_analytic --expectSignal 0 --cminDefaultMinimizerStrategy 0 --cminDefaultMinimizerTolerance 0.1 --algo none --there -n ".ztt.bestfit.singles.robustHesse" -d outputs/tauSF_Feb08_DMinclusive_mTLt30/cmb/ws.root --robustHesse=1
+combineTool.py -m 125 -M MultiDimFit --redefineSignalPOIs "${pois}" --saveFitResult --X-rtd MINIMIZER_analytic --expectSignal 0 --cminDefaultMinimizerStrategy 0 --cminDefaultMinimizerTolerance 0.1 --algo none --there -n ".ztt.bestfit.singles.robustHesse" -d outputs/${output_dir}/cmb/ws.root --robustHesse=1
 ``` 
 
 Make the histograms containing the postfit shapes.
 Note this script only computes the uncertainties for the TotalBkg histogram not for the individual processes to save time (note ZTT is included as background in the current setup)
 
 ```bash
-python python/PostFitShapesCombEras.py -f outputs/tauSF_Feb08_DMinclusive_mTLt30/cmb/multidimfit.ztt.bestfit.singles.robustHesse.root:fit_mdf -w outputs/tauSF_Feb08_DMinclusive_mTLt30/cmb/ws.root -d outputs/tauSF_Feb08_DMinclusive_mTLt30/cmb/combined.txt.cmb --output shapes_postfit.root
+python python/PostFitShapesCombEras.py -f outputs/${output_dir}/cmb/multidimfit.ztt.bestfit.singles.robustHesse.root:fit_mdf -w outputs/${output_dir}/cmb/ws.root -d outputs/${output_dir}/cmb/combined.txt.cmb --output shapes_postfit.root
 ```
 You can optionally use the option "-b" to only specify one bin at a time allowing the shapes to be run parallel e.g "-b ztt_mt_1_2018"
 

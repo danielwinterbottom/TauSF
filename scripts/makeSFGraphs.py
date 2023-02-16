@@ -1,6 +1,7 @@
 # this script takes the fit result and converts it into a set of TGraphAsymmErrors objects
 
 import ROOT
+import math
 from array import array
 from argparse import ArgumentParser
 ROOT.gROOT.SetBatch(1)
@@ -62,15 +63,73 @@ def DecomposeUncerts(fitresult, fit):
 
   return shifted_functions
 
+def _crystalballEfficiency(m, m0, sigma, alpha, n, norm):
+  
+    sqrtPiOver2 = math.sqrt(ROOT.TMath.PiOver2())
+    sqrt2       = math.sqrt(2.)
+    sig         = abs(sigma)
+    t           = (m - m0)/sig * alpha / abs(alpha)
+    absAlpha    = abs(alpha/sig)
+    a           = ROOT.TMath.Power(n/absAlpha, n) * ROOT.TMath.Exp(-0.5 * absAlpha * absAlpha)
+    b           = absAlpha - n/absAlpha
+    arg         = absAlpha / sqrt2;
+  
+    if   arg >  5.: ApproxErf =  1.
+    elif arg < -5.: ApproxErf = -1.
+    else          : ApproxErf = ROOT.TMath.Erf(arg)
+  
+    leftArea    = (1. + ApproxErf) * sqrtPiOver2
+    rightArea   = ( a * 1./ROOT.TMath.Power(absAlpha-b, n-1) ) / (n - 1)
+    area        = leftArea + rightArea
+  
+    if t <= absAlpha:
+        arg = t / sqrt2
+        if   arg >  5.: ApproxErf =  1.
+        elif arg < -5.: ApproxErf = -1.
+        else          : ApproxErf = ROOT.TMath.Erf(arg)
+        return norm * (1 + ApproxErf) * sqrtPiOver2 / area
+  
+    else:
+        return norm * (leftArea + a * (1/ROOT.TMath.Power(t-b,n-1) - \
+                                       1/ROOT.TMath.Power(absAlpha - b,n-1)) / (1 - n)) / area
+
+def crystalballEfficiency(x, par):
+    x     = x[0]
+    m0    = par[0]
+    sigma = par[1]
+    alpha = par[2]
+    n     = par[3]
+    norm  = par[4]
+    return _crystalballEfficiency( x, m0, sigma, alpha, n, norm )
+
+def crystalballEfficiencyCorrParams(x, par):
+    x     = x[0]
+    m0    = par[0]
+    sigma = par[1]
+    alpha = par[2]
+    n     = par[1]
+    norm  = par[3]
+    return _crystalballEfficiency( x, m0, sigma, alpha, n, norm )
+
 def FitSF(h,func='erf'):
   h_uncert = ROOT.TH1D(h.GetName()+'_uncert',"",1000,0,200)
   if func == 'erf':
     f2 = ROOT.TF1("f2","[0]*TMath::Erf((x-[1])/[2])",20.,200.)
     f2.SetParameter(2,40)
   elif func == 'erf_extra':
-    f2 = ROOT.TF1("f2","([0]+[3]*x)*TMath::Erf((x-[1])/[2])",20.,200.)
+    #f2 = ROOT.TF1("f2","([0]+[1]*x)-TMath::Erf((-x-[1])/[2])",20.,200.) # found this function by accident but it seems to work
+    f2 = ROOT.TF1("f2","[0]*(TMath::Erf((-x-[1])/[2])+[3]*x)",20.,200.) 
     f2.SetParameter(2,40)
     f2.SetParameter(3,0)
+  elif func == 'cb_eff':
+    par = [10,5,6,2.,1.]
+    f2 = ROOT.TF1("f2",crystalballEfficiency,20.,200.,5)
+    f2.SetParameter(0,par[0]) # x0 
+    f2.SetParameter(1,par[1]) # sigma
+    f2.SetParameter(2,par[2]) # alpha
+    f2.SetParameter(3,par[3]) # n
+    f2.SetParameter(4,par[4]) #[4]
+
   elif 'pol' in func:
     f2 = ROOT.TF1("f2",func,20.,200.)
   else:
@@ -86,10 +145,11 @@ def FitSF(h,func='erf'):
   # repeat fit up to 100 times until the fit converges properly
   rep = True
   count = 0
+  maxN = 100
   while rep:
     fitresult = h.Fit("f2",'SIR')
     rep = int(fitresult) != 0
-    if not rep or count>100:
+    if not rep or count>maxN:
       ROOT.TVirtualFitter.GetFitter().GetConfidenceIntervals(h_uncert, 0.68)
       fit = f2
       uncerts = DecomposeUncerts(fitresult, fit)
@@ -144,6 +204,8 @@ for e in eras:
 
 bin_boundaries = [20.,25.,30.,35.,40.,50.,60.,80.,100.,200.]
 
+htemp = ROOT.TH1D('htemp','',len(bin_boundaries)-1, array('d',bin_boundaries))
+
 # taking pt bins from average values instead
 pt_vals = [23., 28., 32., 37., 44., 54., 68., 89., 125.] 
 
@@ -172,7 +234,6 @@ for v in vals:
   x_val=FindBin(pt_hi,pt_lo)
   graph_values['%s_%s' % (dm_bin,era)].append((x_val, val, e_down, e_up))
 
-
 if not dm_bins:
 
   for era in eras:
@@ -195,17 +256,30 @@ dm_binned_strings={}
 
 for g_val in graph_values:
 
+  h = htemp.Clone()
+  h.SetName('DM%s_hist' % g_val)
+
   gr = ROOT.TGraphAsymmErrors()
   gr.SetName('DM%s' % g_val)
   for x in graph_values[g_val]:
     n=gr.GetN()
     gr.SetPoint(n,x[0], x[1])
-    gr.SetPointError (n, 0., 0., x[2], x[3])
+    gr.SetPointError (n, 0., 0., x[2], x[3]) 
+    bini = h.FindBin(x[0])
+    h.SetBinContent(bini, x[1])
+    h.SetBinError(bini, max(x[2],x[3])) # set histogram error to maximum of the up and down
   fout.cd()
   gr.Write()
-  if 'DM10_2016_postVFP' in gr.GetName() or 'DM0_' in gr.GetName() or '2016_preVFP' in gr.GetName() or 'DM11_2018' in gr.GetName(): fit, h_uncert, h, uncerts = FitSF(gr,func='pol1')
-  else: fit, h_uncert, h, uncerts = FitSF(gr,func='erf_extra')
+  h.Write()
+  # these commented line use either erf or pol1 fits
+  #if 'DM10_2016_postVFP' in gr.GetName() or 'DM0_' in gr.GetName() or '2016_preVFP' in gr.GetName() or 'DM11_2018' in gr.GetName(): fit, h_uncert, h, uncerts = FitSF(gr,func='pol1')
   #else: fit, h_uncert, h, uncerts = FitSF(gr,func='erf')
+
+
+  dm=str(gr.GetName()).split('_')[0]
+  era=str(gr.GetName()).split('_')[1]
+  if dm=='DM0' or (dm=='DM10') or (dm=='DM11'): fit, h_uncert, h, uncerts = FitSF(gr,func='pol1')
+  else: fit, h_uncert, h, uncerts = FitSF(gr,func='erf_extra')
   gr.Write(gr.GetName()+'_fitted')
   fit.Write()
   h_uncert.Write()
