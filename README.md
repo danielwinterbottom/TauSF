@@ -24,7 +24,7 @@ Clone combine and combine harvester:
 Clone tauSF repository:
 
 ```bash
-git clone git@github.com:danielwinterbottom/TauSF.git TauSF
+git clone git@github.com:danielwinterbottom/TauSF.git CombineHarvester/TauSF
 ```
 
 compile:

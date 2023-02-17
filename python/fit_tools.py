@@ -1,3 +1,6 @@
+import ROOT
+import math
+
 def DecomposeUncerts(fitresult, fit):
   # this function decomposes the uncertainties into orthogonal shifts
   shifted_functions = []
@@ -14,14 +17,17 @@ def DecomposeUncerts(fitresult, fit):
   transposed_eigenvectors = eigenvectors.Clone().T()
 
   for i in range(fit.GetNpar()):
+
       temp = ROOT.TVectorD(fit.GetNpar())
       for j in range(fit.GetNpar()):
           temp[j] = transposed_eigenvectors(i, j)
+
 
       temp*=variances(i,i)**0.5
       fit_up=fit.Clone()  
       fit_down=fit.Clone() 
 
+      # shift each parameter of the function in turn
       for j in range(fit.GetNpar()): 
         p_uncert = temp[j] 
         nom = fit.GetParameter(j)
@@ -90,8 +96,8 @@ def FitSF(h,func='erf'):
     f2 = ROOT.TF1("f2","[0]*TMath::Erf((x-[1])/[2])",20.,200.)
     f2.SetParameter(2,40)
   elif func == 'erf_extra':
-    #f2 = ROOT.TF1("f2","([0]+[1]*x)-TMath::Erf((-x-[1])/[2])",20.,200.) # found this function by accident but it seems to work
-    f2 = ROOT.TF1("f2","[0]*(TMath::Erf((-x-[1])/[2])+[3]*x)",20.,200.) 
+    #error function with additional linear component
+    f2 = ROOT.TF1("f2","[0]*(TMath::Erf((x-[1])/[2]) + [3] + [4]*x)",20.,200.) 
     f2.SetParameter(2,40)
     f2.SetParameter(3,0)
   elif func == 'cb_eff':
@@ -102,7 +108,8 @@ def FitSF(h,func='erf'):
     f2.SetParameter(2,par[2]) # alpha
     f2.SetParameter(3,par[3]) # n
     f2.SetParameter(4,par[4]) #[4]
-
+  elif func == 'pol0_gt40':
+    f2 = ROOT.TF1("f2",'pol0',40.,200.)
   elif 'pol' in func:
     f2 = ROOT.TF1("f2",func,20.,200.)
   else:
@@ -132,3 +139,17 @@ def FitSF(h,func='erf'):
 
   print 'Chi2/NDF = %.2f/%.0f, p-value = %.2f' % (f2.GetChisquare(), f2.GetNDF(), f2.GetProb())
   return fit, h_uncert, h, uncerts
+
+def PlotSF(f, h, name, title='', output_folder='./'):
+  c1 = ROOT.TCanvas()
+  f.GetXaxis().SetTitle('p_{T} (GeV)')
+  f.GetYaxis().SetTitle('correction')
+  f.SetTitle(title)
+  f.SetLineColor(ROOT.kBlack)
+  f.Draw('ape')
+  h.Draw("e3 same")
+  f.Draw('pesame')
+  c1.RedrawAxis()
+  h.SetStats(0)
+  h.SetFillColor(ROOT.kBlue-10)
+  c1.Print(output_folder+'/'+name+'.pdf')
