@@ -148,6 +148,7 @@ for era in eras:
 # then we fit these with the same functions we use for the nominal SFs
 # the fitted distributions then correspond to our uncertainty variations
 
+
 def MakeUpAndDownVariations(g,guncert):
 
   x = ROOT.Double()
@@ -177,6 +178,35 @@ def MakeUpAndDownVariations(g,guncert):
     gout_down.SetName(guncert.GetName()+'_down')
 
   return (gout_up,gout_down)
+
+def PlotpTBinned(nom, systs,output_name):
+
+  colors = [2,3]
+
+  c1=ROOT.TCanvas()
+
+  nom.GetXaxis().SetTitle('p_{T} (GeV)')
+  nom.GetYaxis().SetTitle('correction')
+  nom.SetTitle('')
+  nom.SetMarkerStyle(20)
+  nom.Draw('ape')
+  leg = ROOT.TLegend(0.15,0.92,0.9,0.96)
+  leg.SetNColumns(4)
+  leg.SetBorderSize(0)
+  leg.AddEntry(nom,'total uncert.' ,'ep')
+  for i, syst in enumerate(systs):
+    syst.SetLineColor(colors[i]) 
+    leg.AddEntry(syst,'_'.join(str(syst.GetName()).split('_')[2:]),'e')
+    for j in range(0,nom.GetN()):
+      x=ROOT.Double()
+      y=ROOT.Double()
+      nom.GetPoint(j,x,y)
+      syst.SetPoint(j,x,y)
+    syst.Draw('pep') 
+  leg.Draw() 
+ 
+  c1.Print(output_name+'.pdf')
+
 
 def CompareSystsPlot(nom, systs,output_name):
 
@@ -276,3 +306,9 @@ if args.dm_bins:
       PlotSF(g, h_uncert_nom, 'tau_sf_DM%(dm)s_%(era)s' % vars(), title='DM%(dm)s, %(era)s' % vars(), output_folder=output_folder)
       CompareSystsPlot(fit_nom,systs_to_plot,output_folder+'/'+'uncerts_systs_tau_sf_DM%(dm)s_%(era)s' % vars())
       CompareSystsPlot(fit_nom,stats_to_plot,output_folder+'/'+'uncerts_stats_tau_sf_DM%(dm)s_%(era)s' % vars())
+
+# make plots of pT-dependent SFs
+if not args.dm_bins:
+  for era in eras:
+    systs=[fout.Get('DMinclusive_%(era)s_syst_alleras' % vars()).Clone(), fout.Get('DMinclusive_%(era)s_syst_%(era)s' % vars()).Clone()]
+    PlotpTBinned(fout.Get('DMinclusive_%(era)s' % vars()),systs,output_folder+'/'+'tau_sf_DMinclusive_%(era)s' % vars())

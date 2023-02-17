@@ -127,10 +127,6 @@ for g_val in graph_values:
   fout.cd()
   gr.Write()
   h.Write()
-  # these commented line use either erf or pol1 fits
-  #if 'DM10_2016_postVFP' in gr.GetName() or 'DM0_' in gr.GetName() or '2016_preVFP' in gr.GetName() or 'DM11_2018' in gr.GetName(): fit, h_uncert, h, uncerts = FitSF(gr,func='pol1')
-  #else: fit, h_uncert, h, uncerts = FitSF(gr,func='erf')
-
 
   dm=str(gr.GetName()).split('_')[0]
   era=str(gr.GetName()).split('_')[1]

@@ -120,13 +120,39 @@ For dm-binned SF only we also need to run this fit:
 combineTool.py -m 125 -M MultiDimFit --redefineSignalPOIs "${pois}" --saveWorkspace --X-rtd MINIMIZER_analytic --expectSignal 0 --cminDefaultMinimizerStrategy 0 --cminDefaultMinimizerTolerance 0.1 --algo singles --cl=0.68 --there -d outputs/${output_dir}/cmb/higgsCombine.ztt.bestfit.singles.MultiDimFit.mH125.root -n ".ztt.bestfit.singles.postfit.freeze_byErasAndBins_byBins_byDM" --snapshotName MultiDimFit  --snapshotName MultiDimFit --freezeNuisanceGroups byErasAndBins,byBins,byDM0,byDM1,byDM10,byDM11
 ```
 
-Once the fits are run it is also possible to make a summary plot of the uncertainty magnitudes using:
+Old: Once the fits are run it is also possible to make a summary plot of the uncertainty magnitudes using:
 
 ```bash
 scripts/compareSFUncerts.py 
 ```
-
 Note the names of the graphs are currently hardcoded in this script
+
+The following instructions will prepare the graphs and then decouple the uncertainties storing the results to root files and making plots
+
+
+for pT-dependent fits:
+
+```bash
+mkdir tau_sf_medium
+
+for x in "" .freeze_byErasAndBins .freeze_byErasAndBins_byBins ; do python scripts/makeSFGraphs.py  -f outputs/${output_dir}/cmb/higgsCombine.ztt.bestfit.singles.postfit${x}.MultiDimFit.mH125.root; done
+
+dir=outputs/${output_dir}/cmb/
+
+python scripts/decoupleUncerts.py -f1 ${dir}/higgsCombine.ztt.bestfit.singles.postfit.MultiDimFit.mH125.TGraphAsymmErrors.root -f2 ${dir}/higgsCombine.ztt.bestfit.singles.postfit.freeze_byErasAndBins.MultiDimFit.mH125.TGraphAsymmErrors.root -f3 ${dir}/higgsCombine.ztt.bestfit.singles.postfit.freeze_byErasAndBins_byBins.MultiDimFit.mH125.TGraphAsymmErrors.root -o tau_sf_medium
+```
+
+for dm-binned fits: 
+
+```bash
+mkdir tau_sf_medium
+
+for x in "" .freeze_byErasAndBins .freeze_byErasAndBins_byBins .freeze_byErasAndBins_byBins_byDM; do python scripts/makeSFGraphs.py  -f outputs/${output_dir}/cmb/higgsCombine.ztt.bestfit.singles.postfit${x}.MultiDimFit.mH125.root --dm-bins; done
+
+dir=outputs/${output_dir}/cmb/
+
+python scripts/decoupleUncerts.py -f1 ${dir}/higgsCombine.ztt.bestfit.singles.postfit.MultiDimFit.mH125.TGraphAsymmErrors.root -f2 ${dir}/higgsCombine.ztt.bestfit.singles.postfit.freeze_byErasAndBins.MultiDimFit.mH125.TGraphAsymmErrors.root -f3 ${dir}/higgsCombine.ztt.bestfit.singles.postfit.freeze_byErasAndBins_byBins.MultiDimFit.mH125.TGraphAsymmErrors.root  -f4 ${dir}/higgsCombine.ztt.bestfit.singles.postfit.freeze_byErasAndBins_byBins_byDM.MultiDimFit.mH125.TGraphAsymmErrors.root --dm-bins -o tau_sf_medium
+```
 
 ## Run postfit plots
 

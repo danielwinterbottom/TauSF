@@ -26,3 +26,12 @@ echo "Running snapshot fit with byErasAndBins, byBins, and byDM frozen"
 
 combineTool.py -m 125 -M MultiDimFit --redefineSignalPOIs "${pois}" --saveWorkspace --X-rtd MINIMIZER_analytic --expectSignal 0 --cminDefaultMinimizerStrategy 0 --cminDefaultMinimizerTolerance 0.1 --algo singles --cl=0.68 --there -d outputs/${output_dir}/cmb/higgsCombine.ztt.bestfit.singles.MultiDimFit.mH125.root -n ".ztt.bestfit.singles.postfit.freeze_byErasAndBins_byBins_byDM" --snapshotName MultiDimFit   --freezeNuisanceGroups byErasAndBins,byBins,byDM0,byDM1,byDM10,byDM11
 
+echo "Making graphs with SFs"
+
+for x in "" .freeze_byErasAndBins .freeze_byErasAndBins_byBins .freeze_byErasAndBins_byBins_byDM; do python scripts/makeSFGraphs.py  -f outputs/${output_dir}/cmb/higgsCombine.ztt.bestfit.singles.postfit${x}.MultiDimFit.mH125.root --dm-bins; done
+
+echo "Making graphs with decomposed uncertainties"
+
+dir=outputs/${output_dir}/cmb/
+
+python scripts/decoupleUncerts.py -f1 ${dir}/higgsCombine.ztt.bestfit.singles.postfit.MultiDimFit.mH125.TGraphAsymmErrors.root -f2 ${dir}/higgsCombine.ztt.bestfit.singles.postfit.freeze_byErasAndBins.MultiDimFit.mH125.TGraphAsymmErrors.root -f3 ${dir}/higgsCombine.ztt.bestfit.singles.postfit.freeze_byErasAndBins_byBins.MultiDimFit.mH125.TGraphAsymmErrors.root  -f4 ${dir}/higgsCombine.ztt.bestfit.singles.postfit.freeze_byErasAndBins_byBins_byDM.MultiDimFit.mH125.TGraphAsymmErrors.root --dm-bins -o tau_sf_medium
