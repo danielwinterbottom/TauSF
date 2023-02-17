@@ -1,0 +1,36 @@
+# Compiled Object files
+*.slo
+*.lo
+*.o
+*.out
+
+# Object definition files
+*.d
+
+# Compiled Dynamic libraries
+*.so
+*.dylib
+*.pcm
+
+# Compiled Static libraries
+*.lai
+*.la
+*.a
+
+# Python
+__init__.py
+*.pyc
+
+# filelist folders
+jobs/
+*.root
+*.png
+*.pdf
+*.csv
+
+#backups
+*~
+
+# jobs files
+*.sh.o*
+*.sh.e*
