@@ -14,8 +14,16 @@ parser = ArgumentParser(prog="harvesterDatacards",description=description,epilog
 parser.add_argument('-c', '--config', dest='config', type=str, default='config/harvestDatacards.yml', action='store', help="set config file")
 parser.add_argument('-o', '--output_folder', dest='output_folder', type=str, default='', help="set output folder name")
 parser.add_argument('--dm-bins', dest='dm_bins', default=False, action='store_true', help="if specified then the mu+tauh channel fits are also split by tau decay-mode")
+parser.add_argument('--wp', dest='wp', default='medium', help="The vs jet WP to measure SFs for")
+parser.add_argument('--tightVsEle', dest='tightVsEle', default=False, action='store_true', help="if specified then use the tight WP of the vs electron ID, otherwise the vvloose WP is used")
 args = parser.parse_args()
 dm_bins=args.dm_bins
+tightVsEle=args.tightVsEle
+wp=args.wp
+
+vsele_wp = 'VVLoose'
+if tightVsEle: vsele_wp='Tight'
+print('Making datacards for %(wp)s VsJet WP and %(vsele_wp)s VsEle WP' % vars())
 
 with open(args.config, 'r') as file:
    setup = yaml.safe_load(file)
@@ -62,32 +70,35 @@ sig_procs = ['ZTT','VVT','TTT']
 cats = {}
 cats['zmm'] = [(0, 'zmm_inclusive')]
 
+if tightVsEle: cat_extra='_tightVsEle'
+else: cat_extra=''
+
 if dm_bins:
   cats['mt'] = []
   for i, dm in enumerate([0,1,10,11]):
     cats['mt'] += [
-     ((i+1)*100+1,  'mt_dm%i_mTLt30_pT_20_to_25' % dm),
-     ((i+1)*100+2,  'mt_dm%i_mTLt30_pT_25_to_30' % dm),
-     ((i+1)*100+3,  'mt_dm%i_mTLt30_pT_30_to_35' % dm),
-     ((i+1)*100+4,  'mt_dm%i_mTLt30_pT_35_to_40' % dm),
-     ((i+1)*100+5,  'mt_dm%i_mTLt30_pT_40_to_50' % dm),
-     ((i+1)*100+6, 'mt_dm%i_mTLt30_pT_50_to_60' % dm),
-     ((i+1)*100+7, 'mt_dm%i_mTLt30_pT_60_to_80' % dm),
-     ((i+1)*100+8, 'mt_dm%i_mTLt30_pT_80_to_100' % dm),
-     ((i+1)*100+9, 'mt_dm%i_mTLt30_pT_100_to_200' % dm),
+     ((i+1)*100+1,  'mt_dm%i_mTLt30%s_pT_20_to_25'   % (dm,cat_extra)),
+     ((i+1)*100+2,  'mt_dm%i_mTLt30%s_pT_25_to_30'   % (dm,cat_extra)),
+     ((i+1)*100+3,  'mt_dm%i_mTLt30%s_pT_30_to_35'   % (dm,cat_extra)),
+     ((i+1)*100+4,  'mt_dm%i_mTLt30%s_pT_35_to_40'   % (dm,cat_extra)),
+     ((i+1)*100+5,  'mt_dm%i_mTLt30%s_pT_40_to_50'   % (dm,cat_extra)),
+     ((i+1)*100+6,  'mt_dm%i_mTLt30%s_pT_50_to_60'   % (dm,cat_extra)),
+     ((i+1)*100+7,  'mt_dm%i_mTLt30%s_pT_60_to_80'   % (dm,cat_extra)),
+     ((i+1)*100+8,  'mt_dm%i_mTLt30%s_pT_80_to_100'  % (dm,cat_extra)),
+     ((i+1)*100+9,  'mt_dm%i_mTLt30%s_pT_100_to_200' % (dm,cat_extra)),
     ]
 else:
 
   cats['mt'] = [
-               (1, 'mt_inclusive_mTLt30_pT_20_to_25'),
-               (2, 'mt_inclusive_mTLt30_pT_25_to_30'),
-               (3, 'mt_inclusive_mTLt30_pT_30_to_35'),
-               (4, 'mt_inclusive_mTLt30_pT_35_to_40'),
-               (5, 'mt_inclusive_mTLt30_pT_40_to_50'),
-               (6, 'mt_inclusive_mTLt30_pT_50_to_60'),
-               (7, 'mt_inclusive_mTLt30_pT_60_to_80'),
-               (8, 'mt_inclusive_mTLt30_pT_80_to_100'),
-               (9, 'mt_inclusive_mTLt30_pT_100_to_200'), 
+               (1, 'mt_inclusive_mTLt30%s_pT_20_to_25'   % cat_extra),
+               (2, 'mt_inclusive_mTLt30%s_pT_25_to_30'   % cat_extra),
+               (3, 'mt_inclusive_mTLt30%s_pT_30_to_35'   % cat_extra),
+               (4, 'mt_inclusive_mTLt30%s_pT_35_to_40'   % cat_extra),
+               (5, 'mt_inclusive_mTLt30%s_pT_40_to_50'   % cat_extra),
+               (6, 'mt_inclusive_mTLt30%s_pT_50_to_60'   % cat_extra),
+               (7, 'mt_inclusive_mTLt30%s_pT_60_to_80'   % cat_extra),
+               (8, 'mt_inclusive_mTLt30%s_pT_80_to_100'  % cat_extra),
+               (9, 'mt_inclusive_mTLt30%s_pT_100_to_200' % cat_extra), 
   ]
 
 # Create an empty CombineHarvester instance
@@ -245,7 +256,8 @@ for era in eras:
 # Populating Observation, Process and Systematic entries in the harvester instance
 for chn in channels:
   for era in eras:
-    filename = 'shapes/ztt.datacard.m_vis.%s.%s.root' % (chn,era)
+    if chn=='zmm': filename = 'shapes/ztt.datacard.m_vis.%s.%s.root' % (chn,era)
+    else: filename = 'shapes/ztt.datacard.m_vis.%s.%s.%s.root' % (chn,era,wp)
     print ">>>   file %s" % (filename)
     print('%s, %s' % (chn, era))
     cb.cp().channel([chn]).process(bkg_procs[chn]).era([era]).ExtractShapes(filename, "$BIN/$PROCESS", "$BIN/$PROCESS_$SYSTEMATIC")

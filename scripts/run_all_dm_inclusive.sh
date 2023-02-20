@@ -1,8 +1,9 @@
 output_dir=$1
+options=$2
 
 pois="rate_tauSF_DMinclusive_pT20to25_2016_preVFP,rate_tauSF_DMinclusive_pT25to30_2016_preVFP,rate_tauSF_DMinclusive_pT30to35_2016_preVFP,rate_tauSF_DMinclusive_pT35to40_2016_preVFP,rate_tauSF_DMinclusive_pT40to50_2016_preVFP,rate_tauSF_DMinclusive_pT50to60_2016_preVFP,rate_tauSF_DMinclusive_pT60to80_2016_preVFP,rate_tauSF_DMinclusive_pT80to100_2016_preVFP,rate_tauSF_DMinclusive_pT100to200_2016_preVFP,rate_tauSF_DMinclusive_pT20to25_2016_postVFP,rate_tauSF_DMinclusive_pT25to30_2016_postVFP,rate_tauSF_DMinclusive_pT30to35_2016_postVFP,rate_tauSF_DMinclusive_pT35to40_2016_postVFP,rate_tauSF_DMinclusive_pT40to50_2016_postVFP,rate_tauSF_DMinclusive_pT50to60_2016_postVFP,rate_tauSF_DMinclusive_pT60to80_2016_postVFP,rate_tauSF_DMinclusive_pT80to100_2016_postVFP,rate_tauSF_DMinclusive_pT100to200_2016_postVFP,rate_tauSF_DMinclusive_pT20to25_2017,rate_tauSF_DMinclusive_pT25to30_2017,rate_tauSF_DMinclusive_pT30to35_2017,rate_tauSF_DMinclusive_pT35to40_2017,rate_tauSF_DMinclusive_pT40to50_2017,rate_tauSF_DMinclusive_pT50to60_2017,rate_tauSF_DMinclusive_pT60to80_2017,rate_tauSF_DMinclusive_pT80to100_2017,rate_tauSF_DMinclusive_pT100to200_2017,rate_tauSF_DMinclusive_pT20to25_2018,rate_tauSF_DMinclusive_pT25to30_2018,rate_tauSF_DMinclusive_pT30to35_2018,rate_tauSF_DMinclusive_pT35to40_2018,rate_tauSF_DMinclusive_pT40to50_2018,rate_tauSF_DMinclusive_pT50to60_2018,rate_tauSF_DMinclusive_pT60to80_2018,rate_tauSF_DMinclusive_pT80to100_2018,rate_tauSF_DMinclusive_pT100to200_2018"
 
-python scripts/harvestDatacards.py -o "outputs/${output_dir}"
+python scripts/harvestDatacards.py -o "outputs/${output_dir}" ${options}
 
 combineTool.py -M T2W -i outputs/${output_dir}/cmb/ -o ws.root --X-allow-no-signal
 
@@ -30,4 +31,4 @@ echo "Making graphs with decomposed uncertainties"
 
 dir=outputs/${output_dir}/cmb/
 
-python scripts/decoupleUncerts.py -f1 ${dir}/higgsCombine.ztt.bestfit.singles.postfit.MultiDimFit.mH125.TGraphAsymmErrors.root -f2 ${dir}/higgsCombine.ztt.bestfit.singles.postfit.freeze_byErasAndBins.MultiDimFit.mH125.TGraphAsymmErrors.root -f3 ${dir}/higgsCombine.ztt.bestfit.singles.postfit.freeze_byErasAndBins_byBins.MultiDimFit.mH125.TGraphAsymmErrors.root -o tau_sf_medium 
+python scripts/decoupleUncerts.py -f1 ${dir}/higgsCombine.ztt.bestfit.singles.postfit.MultiDimFit.mH125.TGraphAsymmErrors.root -f2 ${dir}/higgsCombine.ztt.bestfit.singles.postfit.freeze_byErasAndBins.MultiDimFit.mH125.TGraphAsymmErrors.root -f3 ${dir}/higgsCombine.ztt.bestfit.singles.postfit.freeze_byErasAndBins_byBins.MultiDimFit.mH125.TGraphAsymmErrors.root -o outputs/${output_dir} 

@@ -57,11 +57,11 @@ def SplitUncerts(g1,g2,g3,era,dm=None,g4=None):
       up_stat = up_no_era_ptbins_dmbins
       down_stat = down_no_era_ptbins_dmbins
 
-      up_dmbins = (up_no_era_ptbins**2 - up_stat**2)**.5
-      down_dmbins = (down_no_era_ptbins**2 - down_stat**2)**.5
+      up_dmbins = max(up_no_era_ptbins**2-up_stat**2,0.)**.5
+      down_dmbins = max(down_no_era_ptbins**2-down_stat**2,0.)**.5
 
-      up_era = (up_total**2-up_no_era**2)**.5
-      down_era= (down_total**2-down_no_era**2)**.5
+      up_era = max(up_total**2-up_no_era**2,0.)**.5
+      down_era= max(down_total**2-down_no_era**2,0.)**.5
 
       up_ptbins = max(up_no_era**2-up_no_era_ptbins**2,0.)**.5
       down_ptbins = max(down_no_era**2-down_no_era_ptbins**2,0.)**.5
@@ -71,11 +71,11 @@ def SplitUncerts(g1,g2,g3,era,dm=None,g4=None):
       up_stat = up_no_era_ptbins
       down_stat = down_no_era_ptbins
 
-      up_ptbins = (up_no_era**2-up_stat**2)**.5
-      down_ptbins = (down_no_era**2-down_stat**2)**.5
+      up_ptbins = max(up_no_era**2-up_stat**2,0.)**.5
+      down_ptbins = max(down_no_era**2-down_stat**2,0.)**.5
 
-      up_era = (up_total**2-up_no_era**2)**.5
-      down_era = (down_total**2-down_no_era**2)**.5
+      up_era = max(up_total**2-up_no_era**2,0.)**.5
+      down_era = max(down_total**2-down_no_era**2,0.)**.5
 
     gout1.SetPointEYhigh(i,up_stat)
     gout1.SetPointEYlow(i,down_stat)
@@ -124,7 +124,8 @@ for era in eras:
   for dm in dms:
  
     graph_name = 'DM%(dm)s_%(era)s' % vars()
-  
+    
+    h1 = f1.Get(graph_name+'_hist') 
     g1 = f1.Get(graph_name)
     g2 = f2.Get(graph_name)
     g3 = f3.Get(graph_name)
@@ -140,6 +141,7 @@ for era in eras:
   
     fout.cd()
     g1.Write() 
+    h1.Write() 
     gout1.Write() 
     gout2.Write() 
     gout3.Write()
