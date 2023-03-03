@@ -256,7 +256,7 @@ if args.dm_bins:
     for dm in [0,1,10,11]:
 
       fit_func='pol1'
-      if dm==1 and era != '2016_preVFP': fit_func='erf'
+#      if dm==1 and era != '2016_preVFP': fit_func='erf'
       graph_name = 'DM%(dm)s_%(era)s' % vars()
 
       g=fout.Get(graph_name)

@@ -94,14 +94,14 @@ if not dm_bins:
 
   for era in eras:
     print 'pT-binned SFs for era %s:' %era
-    out='('
+    out='((gen_match_2!=5) + (gen_match_2==5)*('
     for i, b in enumerate(bin_boundaries[:-1]):
       x=list(vals['rate_tauSF_DMinclusive_pT%ito%i_%s' % (int(b), int(bin_boundaries[i+1]), era)])
       x.sort()
       val=x[1]
       if b == 100: out+='(pt_2>=%i)*(%.3f)' %(b, val)
       else: out+='(pt_2>=%i&&pt_2<%i)*(%.3f)+' %(b, bin_boundaries[i+1], val) 
-    out+=')'
+    out+='))'
     print out
 
 print ('Writing to file: %s' % fout_name)
@@ -130,8 +130,9 @@ for g_val in graph_values:
 
   dm=str(gr.GetName()).split('_')[0]
   era=str(gr.GetName()).split('_')[1]
-  if dm=='DM0' or (dm=='DM10') or (dm=='DM11'): fit, h_uncert, h, uncerts = FitSF(gr,func='pol1')
-  else: fit, h_uncert, h, uncerts = FitSF(gr,func='erf_extra')
+#  if dm=='DM0' or (dm=='DM10') or (dm=='DM11'): fit, h_uncert, h, uncerts = FitSF(gr,func='pol1')
+#  else: fit, h_uncert, h, uncerts = FitSF(gr,func='erf_extra')
+  fit, h_uncert, h, uncerts = FitSF(gr,func='pol1')
   gr.Write(gr.GetName()+'_fitted')
   fit.Write()
   h_uncert.Write()
@@ -142,7 +143,7 @@ for g_val in graph_values:
     x[1].Write() 
     x[2].Write() 
 
-  dm_binned_strings[gr.GetName()] = str(fit.GetExpFormula('p')).replace('x','min(pt_2,125.)')
+  dm_binned_strings[gr.GetName()] = str(fit.GetExpFormula('p')).replace('x','min(pt_2,140.)')
   PlotSF(gr, h_uncert, 'fit_'+gr.GetName(), title=gr.GetName(), output_folder='./')
 
 print dm_binned_strings
@@ -150,9 +151,9 @@ print dm_binned_strings
 if dm_bins:
   for era in eras:
     print 'DM-binned SFs for era %s:' %era
-    out='('
+    out='((gen_match_2!=5) + (gen_match_2==5)*('
     for dm in [0,1,10,11]:
       out+='(tau_decay_mode_2==%i)*(%s)+' % (dm, dm_binned_strings['DM%i_%s' % (dm,era)])
     out=out[:-1]
-    out+=')'
+    out+='))'
     print out

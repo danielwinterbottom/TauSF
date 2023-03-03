@@ -77,29 +77,34 @@ if dm_bins:
   cats['mt'] = []
   for i, dm in enumerate([0,1,10,11]):
     cats['mt'] += [
-     ((i+1)*100+1,  'mt_dm%i_mTLt30%s_pT_20_to_25'   % (dm,cat_extra)),
-     ((i+1)*100+2,  'mt_dm%i_mTLt30%s_pT_25_to_30'   % (dm,cat_extra)),
-     ((i+1)*100+3,  'mt_dm%i_mTLt30%s_pT_30_to_35'   % (dm,cat_extra)),
-     ((i+1)*100+4,  'mt_dm%i_mTLt30%s_pT_35_to_40'   % (dm,cat_extra)),
-     ((i+1)*100+5,  'mt_dm%i_mTLt30%s_pT_40_to_50'   % (dm,cat_extra)),
-     ((i+1)*100+6,  'mt_dm%i_mTLt30%s_pT_50_to_60'   % (dm,cat_extra)),
-     ((i+1)*100+7,  'mt_dm%i_mTLt30%s_pT_60_to_80'   % (dm,cat_extra)),
-     ((i+1)*100+8,  'mt_dm%i_mTLt30%s_pT_80_to_100'  % (dm,cat_extra)),
-     ((i+1)*100+9,  'mt_dm%i_mTLt30%s_pT_100_to_200' % (dm,cat_extra)),
+     ((i+1)*100+1,  'mt_dm%i_mTLt65%s_pT_20_to_25'   % (dm,cat_extra)),
+     ((i+1)*100+2,  'mt_dm%i_mTLt65%s_pT_25_to_30'   % (dm,cat_extra)),
+     ((i+1)*100+3,  'mt_dm%i_mTLt65%s_pT_30_to_35'   % (dm,cat_extra)),
+     ((i+1)*100+4,  'mt_dm%i_mTLt65%s_pT_35_to_40'   % (dm,cat_extra)),
+     ((i+1)*100+5,  'mt_dm%i_mTLt65%s_pT_40_to_50'   % (dm,cat_extra)),
+     ((i+1)*100+6,  'mt_dm%i_mTLt65%s_pT_50_to_60'   % (dm,cat_extra)),
+     ((i+1)*100+7,  'mt_dm%i_mTLt65%s_pT_60_to_80'   % (dm,cat_extra)),
+     ((i+1)*100+8,  'mt_dm%i_mTLt65%s_pT_80_to_100'  % (dm,cat_extra)),
+     ((i+1)*100+9,  'mt_dm%i_mTLt65%s_pT_100_to_200' % (dm,cat_extra)),
     ]
 else:
 
   cats['mt'] = [
-               (1, 'mt_inclusive_mTLt30%s_pT_20_to_25'   % cat_extra),
-               (2, 'mt_inclusive_mTLt30%s_pT_25_to_30'   % cat_extra),
-               (3, 'mt_inclusive_mTLt30%s_pT_30_to_35'   % cat_extra),
-               (4, 'mt_inclusive_mTLt30%s_pT_35_to_40'   % cat_extra),
-               (5, 'mt_inclusive_mTLt30%s_pT_40_to_50'   % cat_extra),
-               (6, 'mt_inclusive_mTLt30%s_pT_50_to_60'   % cat_extra),
-               (7, 'mt_inclusive_mTLt30%s_pT_60_to_80'   % cat_extra),
-               (8, 'mt_inclusive_mTLt30%s_pT_80_to_100'  % cat_extra),
-               (9, 'mt_inclusive_mTLt30%s_pT_100_to_200' % cat_extra), 
+               (1, 'mt_inclusive_mTLt65%s_pT_20_to_25'   % cat_extra),
+               (2, 'mt_inclusive_mTLt65%s_pT_25_to_30'   % cat_extra),
+               (3, 'mt_inclusive_mTLt65%s_pT_30_to_35'   % cat_extra),
+               (4, 'mt_inclusive_mTLt65%s_pT_35_to_40'   % cat_extra),
+               (5, 'mt_inclusive_mTLt65%s_pT_40_to_50'   % cat_extra),
+               (6, 'mt_inclusive_mTLt65%s_pT_50_to_60'   % cat_extra),
+               (7, 'mt_inclusive_mTLt65%s_pT_60_to_80'   % cat_extra),
+               (8, 'mt_inclusive_mTLt65%s_pT_80_to_100'  % cat_extra),
+               (9, 'mt_inclusive_mTLt65%s_pT_100_to_200' % cat_extra), 
   ]
+
+#for i in range(0,len(cats['mt'])):
+#  cats['mt'][i]=list(cats['mt'][i])
+#  cats['mt'][i][1] = cats['mt'][i][1].replace('Lt65','Lt60')
+#  cats['mt'][i]=tuple(cats['mt'][i])
 
 # Create an empty CombineHarvester instance
 cb = CombineHarvester()
@@ -257,7 +262,7 @@ for era in eras:
 for chn in channels:
   for era in eras:
     if chn=='zmm': filename = 'shapes/ztt.datacard.m_vis.%s.%s.root' % (chn,era)
-    else: filename = 'shapes/ztt.datacard.m_vis.%s.%s.%s.root' % (chn,era,wp)
+    else: filename = 'shapes/ztt.datacard.m_vis.%s.%s.%s.PFMet.root' % (chn,era,wp)
     print ">>>   file %s" % (filename)
     print('%s, %s' % (chn, era))
     cb.cp().channel([chn]).process(bkg_procs[chn]).era([era]).ExtractShapes(filename, "$BIN/$PROCESS", "$BIN/$PROCESS_$SYSTEMATIC")
