@@ -60,7 +60,7 @@ def NegativeBins(p):
 channels = ['zmm','mt']
 bkg_procs = {}
 # procs for the dimuon channel
-bkg_procs['zmm'] = ['ZL', 'ZJ', 'ZTT', 'W', 'VVL', 'VVJ', 'TTL', 'TTJ']
+bkg_procs['zmm'] = ['ZL', 'ZTT','VVL', 'VVJ', 'TTL', 'TTJ','W','ZJ']
 # procs for the mu+tauh channel
 bkg_procs['mt'] = ['ZL', 'ZJ', 'W', 'VVJ', 'TTJ', 'QCD']
 
@@ -127,18 +127,21 @@ dm10_bins = [301,302,303,304,305,306,307,308,309, 311,312,313,314,315,316,317,31
 dm11_bins = [401,402,403,404,405,406,407,408,409, 411,412,413,414,415,416,417,418,419]
 
 # muon selection efficiency for second muon in di-muon dataset
-#cb.cp().channel(['zmm']).process(['W'],False).AddSyst(cb, "CMS_eff_m", "lnN", ch.SystMap()(1.02))
 # better to shift the muon efficiency to the mt channel processes (will effectivly shift these in the opposite direction)
-cb.cp().channel(['mt']).process(['ZTT','TTT','VVT','TTJ','VVJ','ZL','ZJ']).AddSyst(cb, "CMS_eff_m", "lnN", ch.SystMap()(0.98))
+cb.cp().channel(['mt']).process(['ZTT','TTT','VVT']).AddSyst(cb, "CMS_eff_m", "lnN", ch.SystMap()(0.98))
 
-# for Wjets in dimuon data the second muon is a fake so add a seperate uncertainty for this - as this uncertainty is so large we don't need to add another uncertainty for the cross section
-cb.cp().channel(['zmm']).process(['W']).AddSyst(cb, "CMS_j_fake_m", "lnN", ch.SystMap()(1.3))
+
+# for jet->mu in dimuon data the second muon is a fake so add a seperate uncertainty for this - as this uncertainty is so large we don't need to add another uncertainty for the cross section or the lumi
+cb.cp().channel(['zmm']).process(['W','TTJ','VVJ','ZJ']).AddSyst(cb, "CMS_j_fake_m", "lnN", ch.SystMap()(1.3))
 
 # uncertainty on VV cross-section - set to 10% to cover missing higher order terms which are typically this large
 cb.cp().process(['VVL','VVJ','VVT']).AddSyst(cb, "CMS_htt_vvXsec", "lnN", ch.SystMap()(1.1))
 
-# uncertainty on ttbar cross-section - set to 10% to cover missing higher order terms which are typically this large
+# uncertainty on ttbar cross-section - set to 6% to cover missing higher orders
 cb.cp().process(['TTL','TTJ','TTT']).AddSyst(cb, "CMS_htt_tjXsec", "lnN", ch.SystMap()(1.06))
+
+# uncertainty on the DY cross section does not affect Z because the rate parameter includes this effect but it will inversely affect the VV and TT since we assumed these scaled with the same rate parameter as the DY
+cb.cp().process(['TTL','TTT','VVL','VVT']).AddSyst(cb, "CMS_htt_zXsec", "lnN", ch.SystMap()(0.96))
 
 # DY shape uncertainty from re-weighting pT-mass to data (100% variation taked as the uncertainty)
 cb.cp().process(['ZTT','ZL','ZJ']).AddSyst(cb, "CMS_htt_dyShape", "shape", ch.SystMap()(1.0))
@@ -180,7 +183,7 @@ cb.cp().channel(['mt']).process(['TTJ','VVJ','ZJ']).bin_id(dm0_bins).AddSyst(cb,
 cb.cp().channel(['mt']).process(['TTJ','VVJ','ZJ']).bin_id(dm1_bins).AddSyst(cb, "CMS_j_fake_t_DM1", "lnN", ch.SystMap()(1.2))
 cb.cp().channel(['mt']).process(['TTJ','VVJ','ZJ']).bin_id(dm10_bins).AddSyst(cb, "CMS_j_fake_t_DM10", "lnN", ch.SystMap()(1.2))
 cb.cp().channel(['mt']).process(['TTJ','VVJ','ZJ']).bin_id(dm11_bins).AddSyst(cb, "CMS_j_fake_t_DM11", "lnN", ch.SystMap()(1.2))
-# add a part decoupled by pT/mT bin
+# add a part decoupled by pT/DM bin
 cb.cp().channel(['mt']).process(['TTJ','VVJ','ZJ']).AddSyst(cb, "CMS_j_fake_t_$BIN_$ERA", "lnN", ch.SystMap()(1.2))
 
 
@@ -189,25 +192,25 @@ cb.cp().channel(['mt']).process(['ZL']).bin_id(dm0_bins).AddSyst(cb, "CMS_l_fake
 cb.cp().channel(['mt']).process(['ZL']).bin_id(dm0_bins).AddSyst(cb, "CMS_l_fake_t_DM1", "lnN", ch.SystMap()(1.3))
 cb.cp().channel(['mt']).process(['ZL']).bin_id(dm10_bins).AddSyst(cb, "CMS_l_fake_t_DM10", "lnN", ch.SystMap()(1.3))
 cb.cp().channel(['mt']).process(['ZL']).bin_id(dm11_bins).AddSyst(cb, "CMS_l_fake_t_DM11", "lnN", ch.SystMap()(1.3))
-# add a part decoupled by pT/mT bin
+# add a part decoupled by pT/DM bin
 cb.cp().channel(['mt']).process(['ZL']).AddSyst(cb, "CMS_l_fake_t_$BIN_$ERA", "lnN", ch.SystMap()(1.3))
 
 # now add unconstrained rate parameters
 
-# a common rate parameter that scales all MC processes in the di-muon channel and the the ZTT, TTT, and VVT in the mu+tauh channel
-# this doesn't need to scale the W in the mu+tauh channel as there is a seperate rate parameters for this processes 
-cb.cp().channel(['zmm']).AddSyst(cb, "rate_DY_$ERA","rateParam",ch.SystMap()(1.0))
-cb.cp().channel(['mt']).process(["ZTT","TTT","VVT","ZL","TTJ","VVJ"]).AddSyst(cb, "rate_DY_$ERA","rateParam",ch.SystMap()(1.0))
+# a common rate parameter that scales all MC processes in the di-muon channel with 2 genuine muons and the the ZTT, TTT, and VVT in the mu+tauh channel
+cb.cp().channel(['zmm']).process(['ZTT','VVL','TTL','ZL']).AddSyst(cb, "rate_DY_$ERA","rateParam",ch.SystMap()(1.0))
+cb.cp().channel(['mt']).process(["ZTT","VVT","TTT"]).AddSyst(cb, "rate_DY_$ERA","rateParam",ch.SystMap()(1.0))
 
-cb.cp().channel(['mt']).process(["ZTT", "TTT", "VVT"]).bin_id([1,11]).AddSyst(cb, "rate_tauSF_DMinclusive_pT20to25_$ERA","rateParam",ch.SystMap()(1.0))
-cb.cp().channel(['mt']).process(["ZTT", "TTT", "VVT"]).bin_id([2,12]).AddSyst(cb, "rate_tauSF_DMinclusive_pT25to30_$ERA","rateParam",ch.SystMap()(1.0))
-cb.cp().channel(['mt']).process(["ZTT", "TTT", "VVT"]).bin_id([3,13]).AddSyst(cb, "rate_tauSF_DMinclusive_pT30to35_$ERA","rateParam",ch.SystMap()(1.0))
-cb.cp().channel(['mt']).process(["ZTT", "TTT", "VVT"]).bin_id([4,14]).AddSyst(cb, "rate_tauSF_DMinclusive_pT35to40_$ERA","rateParam",ch.SystMap()(1.0))
-cb.cp().channel(['mt']).process(["ZTT", "TTT", "VVT"]).bin_id([5,15]).AddSyst(cb, "rate_tauSF_DMinclusive_pT40to50_$ERA","rateParam",ch.SystMap()(1.0))
-cb.cp().channel(['mt']).process(["ZTT", "TTT", "VVT"]).bin_id([6,16]).AddSyst(cb, "rate_tauSF_DMinclusive_pT50to60_$ERA","rateParam",ch.SystMap()(1.0))
-cb.cp().channel(['mt']).process(["ZTT", "TTT", "VVT"]).bin_id([7,17]).AddSyst(cb, "rate_tauSF_DMinclusive_pT60to80_$ERA","rateParam",ch.SystMap()(1.0))
-cb.cp().channel(['mt']).process(["ZTT", "TTT", "VVT"]).bin_id([8,18]).AddSyst(cb, "rate_tauSF_DMinclusive_pT80to100_$ERA","rateParam",ch.SystMap()(1.0))
-cb.cp().channel(['mt']).process(["ZTT", "TTT", "VVT"]).bin_id([9,19]).AddSyst(cb, "rate_tauSF_DMinclusive_pT100to200_$ERA","rateParam",ch.SystMap()(1.0))
+# now add the POIs
+cb.cp().channel(['mt']).process(["ZTT", "TTT", "VVT"]).bin_id([1]).AddSyst(cb, "rate_tauSF_DMinclusive_pT20to25_$ERA","rateParam",ch.SystMap()(1.0))
+cb.cp().channel(['mt']).process(["ZTT", "TTT", "VVT"]).bin_id([2]).AddSyst(cb, "rate_tauSF_DMinclusive_pT25to30_$ERA","rateParam",ch.SystMap()(1.0))
+cb.cp().channel(['mt']).process(["ZTT", "TTT", "VVT"]).bin_id([3]).AddSyst(cb, "rate_tauSF_DMinclusive_pT30to35_$ERA","rateParam",ch.SystMap()(1.0))
+cb.cp().channel(['mt']).process(["ZTT", "TTT", "VVT"]).bin_id([4]).AddSyst(cb, "rate_tauSF_DMinclusive_pT35to40_$ERA","rateParam",ch.SystMap()(1.0))
+cb.cp().channel(['mt']).process(["ZTT", "TTT", "VVT"]).bin_id([5]).AddSyst(cb, "rate_tauSF_DMinclusive_pT40to50_$ERA","rateParam",ch.SystMap()(1.0))
+cb.cp().channel(['mt']).process(["ZTT", "TTT", "VVT"]).bin_id([6]).AddSyst(cb, "rate_tauSF_DMinclusive_pT50to60_$ERA","rateParam",ch.SystMap()(1.0))
+cb.cp().channel(['mt']).process(["ZTT", "TTT", "VVT"]).bin_id([7]).AddSyst(cb, "rate_tauSF_DMinclusive_pT60to80_$ERA","rateParam",ch.SystMap()(1.0))
+cb.cp().channel(['mt']).process(["ZTT", "TTT", "VVT"]).bin_id([8]).AddSyst(cb, "rate_tauSF_DMinclusive_pT80to100_$ERA","rateParam",ch.SystMap()(1.0))
+cb.cp().channel(['mt']).process(["ZTT", "TTT", "VVT"]).bin_id([9]).AddSyst(cb, "rate_tauSF_DMinclusive_pT100to200_$ERA","rateParam",ch.SystMap()(1.0))
 
 for i, dm in enumerate([0,1,10,11]):
   cb.cp().channel(['mt']).process(["ZTT", "TTT", "VVT"]).bin_id([(i+1)*100+1]).AddSyst(cb, "rate_tauSF_DM%i_pT20to25_$ERA" % dm,"rateParam",ch.SystMap()(1.0))
@@ -219,16 +222,6 @@ for i, dm in enumerate([0,1,10,11]):
   cb.cp().channel(['mt']).process(["ZTT", "TTT", "VVT"]).bin_id([(i+1)*100+7]).AddSyst(cb, "rate_tauSF_DM%i_pT60to80_$ERA" % dm,"rateParam",ch.SystMap()(1.0))
   cb.cp().channel(['mt']).process(["ZTT", "TTT", "VVT"]).bin_id([(i+1)*100+8]).AddSyst(cb, "rate_tauSF_DM%i_pT80to100_$ERA" % dm,"rateParam",ch.SystMap()(1.0))
   cb.cp().channel(['mt']).process(["ZTT", "TTT", "VVT"]).bin_id([(i+1)*100+9]).AddSyst(cb, "rate_tauSF_DM%i_pT100to200_$ERA" % dm,"rateParam",ch.SystMap()(1.0))
-
-  cb.cp().channel(['mt']).process(["ZTT", "TTT", "VVT"]).bin_id([(i+1)*100+11]).AddSyst(cb, "rate_tauSF_DM%i_pT20to25_$ERA" % dm,"rateParam",ch.SystMap()(1.0))
-  cb.cp().channel(['mt']).process(["ZTT", "TTT", "VVT"]).bin_id([(i+1)*100+12]).AddSyst(cb, "rate_tauSF_DM%i_pT25to30_$ERA" % dm,"rateParam",ch.SystMap()(1.0))
-  cb.cp().channel(['mt']).process(["ZTT", "TTT", "VVT"]).bin_id([(i+1)*100+13]).AddSyst(cb, "rate_tauSF_DM%i_pT30to35_$ERA" % dm,"rateParam",ch.SystMap()(1.0))
-  cb.cp().channel(['mt']).process(["ZTT", "TTT", "VVT"]).bin_id([(i+1)*100+14]).AddSyst(cb, "rate_tauSF_DM%i_pT35to40_$ERA" % dm,"rateParam",ch.SystMap()(1.0))
-  cb.cp().channel(['mt']).process(["ZTT", "TTT", "VVT"]).bin_id([(i+1)*100+15]).AddSyst(cb, "rate_tauSF_DM%i_pT40to50_$ERA" % dm,"rateParam",ch.SystMap()(1.0))
-  cb.cp().channel(['mt']).process(["ZTT", "TTT", "VVT"]).bin_id([(i+1)*100+16]).AddSyst(cb, "rate_tauSF_DM%i_pT50to60_$ERA" % dm,"rateParam",ch.SystMap()(1.0))
-  cb.cp().channel(['mt']).process(["ZTT", "TTT", "VVT"]).bin_id([(i+1)*100+17]).AddSyst(cb, "rate_tauSF_DM%i_pT60to80_$ERA" % dm,"rateParam",ch.SystMap()(1.0))
-  cb.cp().channel(['mt']).process(["ZTT", "TTT", "VVT"]).bin_id([(i+1)*100+18]).AddSyst(cb, "rate_tauSF_DM%i_pT80to100_$ERA" % dm,"rateParam",ch.SystMap()(1.0))
-  cb.cp().channel(['mt']).process(["ZTT", "TTT", "VVT"]).bin_id([(i+1)*100+19]).AddSyst(cb, "rate_tauSF_DM%i_pT100to200_$ERA" % dm,"rateParam",ch.SystMap()(1.0))
 
 #single rate parameters for QCD and W+jets
 cb.cp().channel(['mt']).process(["QCD"]).bin_id(inclusive_bins).AddSyst(cb, "rate_QCD_$ERA","rateParam",ch.SystMap()(1.0))
@@ -247,8 +240,8 @@ cb.cp().channel(['mt']).process(["QCD"]).bin_id(dm11_bins).AddSyst(cb, "rate_QCD
 cb.cp().channel(['mt']).process(["W"]).bin_id(dm11_bins).AddSyst(cb, "rate_W_DM11_$ERA","rateParam",ch.SystMap()(1.0))
 
 # additional uncorrelated rate uncertainties to account for different extrapolations per pT/mT bin
-cb.cp().channel(['mt']).process(['W']).AddSyst(cb, "CMS_W_extrap_$BIN_$ERA", "lnN", ch.SystMap()(1.1))
-cb.cp().channel(['mt']).process(['QCD']).AddSyst(cb, "CMS_QCD_extrap_$BIN_$ERA", "lnN", ch.SystMap()(1.1))
+cb.cp().channel(['mt']).process(['W']).AddSyst(cb, "CMS_W_extrap_$BIN_$ERA", "lnN", ch.SystMap()(1.2))
+cb.cp().channel(['mt']).process(['QCD']).AddSyst(cb, "CMS_QCD_extrap_$BIN_$ERA", "lnN", ch.SystMap()(1.2))
 
 #shape uncertainties affecting W+jets:
 # for W+jets a shape uncertainty due to the energy scale of the j->tauh fakes, we assume a 50% correlation for this syst so we add it scaled by 1/sqrt(2) and then we will clone it later for each era so that adding the correlated and uncorrelated parts in quadrature will equal 1 
