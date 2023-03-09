@@ -1,5 +1,5 @@
 # this script takes the fit result and converts it into a set of TGraphAsymmErrors objects
-
+import json
 import ROOT
 import math
 from array import array
@@ -11,14 +11,17 @@ ROOT.gROOT.SetBatch(1)
 description = '''This script makes TGraphAsymmErrors objects from tau ID SF measurments.'''
 parser = ArgumentParser(prog="makeSFGraphs",description=description,epilog="Success!")
 parser.add_argument('--dm-bins', dest='dm_bins', default=False, action='store_true', help="if specified then the mu+tauh channel fits are also split by tau decay-mode")
+parser.add_argument('--saveJson', dest='saveJson', default=False, action='store_true', help="if specified then store the scale factors into jsons")
 parser.add_argument('--file', '-f', help= 'File containing the output of MultiDimFit')
 parser.add_argument('-e', '--eras', dest='eras', type=str, default='all', help="Eras to make plots of pT dependent SFs for")
+parser.add_argument('--wp', dest='wp', type=str, default='dummy_wp', help="The WP the SF are produced for (only used for storing json correctly)")
 args = parser.parse_args()
 
 if args.eras == 'all': eras = ['2016_preVFP', '2016_postVFP', '2017', '2018']
 else: eras=args.eras.split(',')
 
 dm_bins=args.dm_bins
+wp=args.wp
 
 f = ROOT.TFile(args.file)
 
@@ -49,11 +52,16 @@ for poi in pois:
 # group x, y values and errors by DM
 graph_values = {}
 
+sf_map = {}
 
 for e in eras:
+
+
   if dm_bins:
     for dm in [0,1,10,11]: graph_values['%i_%s' % (dm,e)] = []
-  else: graph_values['inclusive_%s' % e] = []  
+  else: 
+    graph_values['inclusive_%s' % e] = []  
+
 
 bin_boundaries = [20.,25.,30.,35.,40.,50.,60.,80.,100.,200.]
 
@@ -90,6 +98,8 @@ for v in vals:
   x_val,x_err=FindBin(pt_hi,pt_lo)
   graph_values['%s_%s' % (dm_bin,era)].append((x_val, val, e_down, e_up, x_err))
 
+sf_map[wp] = {}
+
 if not dm_bins:
 
   for era in eras:
@@ -102,6 +112,7 @@ if not dm_bins:
       if b == 100: out+='(pt_2>=%i)*(%.3f)' %(b, val)
       else: out+='(pt_2>=%i&&pt_2<%i)*(%.3f)+' %(b, bin_boundaries[i+1], val) 
     out+='))'
+    sf_map[wp][era] = out
     print out
 
 print ('Writing to file: %s' % fout_name)
@@ -143,10 +154,9 @@ for g_val in graph_values:
     x[1].Write() 
     x[2].Write() 
 
-  dm_binned_strings[gr.GetName()] = str(fit.GetExpFormula('p')).replace('x','min(pt_2,140.)')
+  dm_binned_strings[gr.GetName()] = str(fit.GetExpFormula('p')).replace('x','min(max(pt_2,20.),140.)')
   PlotSF(gr, h_uncert, 'fit_'+gr.GetName(), title=gr.GetName(), output_folder='./')
 
-print dm_binned_strings
 
 if dm_bins:
   for era in eras:
@@ -156,4 +166,11 @@ if dm_bins:
       out+='(tau_decay_mode_2==%i)*(%s)+' % (dm, dm_binned_strings['DM%i_%s' % (dm,era)])
     out=out[:-1]
     out+='))'
+    sf_map[wp][era] = out
     print out
+
+if args.saveJson:
+  if dm_bins: json_out_name = 'tau_SF_strings_dm_binned_%(wp)s.json' % vars()
+  else: json_out_name = 'tau_SF_strings_pt_binned_%(wp)s.json' % vars()
+  with open(json_out_name, 'w') as fp:
+    json.dump(sf_map, fp, sort_keys=True, indent=4)
