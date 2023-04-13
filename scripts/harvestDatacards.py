@@ -57,6 +57,19 @@ def NegativeBins(p):
           hist.SetBinContent(i,0)
   p.set_shape(hist,False)
 
+def NegativeYields(p):
+  '''If process has negative yield then set to 0'''
+  if (p.process() == "QCD"):
+     if p.rate()<0:
+        hist = p.shape()
+        #error = 0.0
+        for i in range(1,hist.GetNbinsX()+1):
+           bin_i = hist.GetBinContent(i)
+           error = hist.GetBinError(i)
+           bins = [hist.GetXaxis().GetBinLowEdge(i), hist.GetXaxis().GetBinUpEdge(i)]
+           print("Process: ",p.process()," has negative yields.", p.channel(), p.bin(), p.rate(), bins, bin_i, error) 
+        p.set_rate(0.)
+
 channels = ['zmm','mt']
 bkg_procs = {}
 # procs for the dimuon channel
@@ -254,7 +267,7 @@ for era in eras:
 # Populating Observation, Process and Systematic entries in the harvester instance
 for chn in channels:
   for era in eras:
-    if chn=='zmm': filename = 'shapes/ztt.datacard.m_vis.%s.%s.root' % (chn,era)
+    if chn=='zmm': filename = 'shapes/ztt.datacard.m_vis.%s.%s.medium.root' % (chn,era)
     else: filename = 'shapes/ztt.datacard.m_vis.%s.%s.%s.PFMet.root' % (chn,era,wp)
     print ">>>   file %s" % (filename)
     print('%s, %s' % (chn, era))
@@ -288,8 +301,12 @@ for b in cb.cp().channel(['zmm']).bin_set():
 
 # Rebin histograms for mt channel using Auto Rebinning
 
+print(green("Zeroing NegativeYields"))
+cb.ForEachProc(NegativeYields)
+
+
 rebin = AutoRebin()
-rebin.SetBinThreshold(100)
+#rebin.SetBinThreshold(100)
 rebin.SetBinUncertFraction(0.2)
 rebin.SetRebinMode(1)
 rebin.SetPerformRebin(True)
