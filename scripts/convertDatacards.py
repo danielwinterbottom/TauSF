@@ -36,6 +36,10 @@ def splitHistogramsAndWriteToFile(infile,outfile,dirname):
               hnew = histo.ProjectionX(histo.GetName(),y1,y2)
               newdirname = '%s_pT_%i_to_%i' % (dirname, int(b_lo), int(b_hi))
               WriteToTFile(hnew, outfile, newdirname+"/"+name)
+            # now store a version with all pT bins merged
+            hnew = histo.ProjectionX(histo.GetName(),-1,-1)
+            newdirname = '%s_pT_0_to_inf' % (dirname)
+            WriteToTFile(hnew, outfile, newdirname+"/"+name)
 
 def findAvepT(infile,dirname):
     '''Find the average pT of the tau in each pT bin'''
