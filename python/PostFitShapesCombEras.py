@@ -98,15 +98,11 @@ else:
   # print prefit yields and uncertainties
   # this is not the most efficient way to make the prefit plots as it still involves sampling the covariance matrix
   print('\n------------------------------')
-  print('Getting postfit shapes and uncertainties:')
+  print('Getting prefit shapes and uncertainties:')
   print('------------------------------')
 
 
 samples=500 
-
-f_fit = ROOT.TFile(args.fitresult.split(':')[0])
-res = f_fit.Get(args.fitresult.split(':')[1])
-
 
 
 if args.freeze:
@@ -241,7 +237,7 @@ for bin in bins_grouped:
   # first get nominal histogram
   shapes_bkg = []
   for b in bins:
-    shape = cmb_bin.cp().bin([b]).backgrounds().GetShape()
+    shape = cmb_bin.cp().bin([b]).backgrounds().GetShapeWithUncertainty()
     if args.datacard: shape = RestoreBinning(shape, ref)
     shape = shape.Rebin(len(common_bins)-1, '', common_bins)
     shape = ZeroErrors(shape) # zero errors to avoid confusion about what they represent
@@ -257,45 +253,63 @@ for bin in bins_grouped:
   # zero errors on total background histogram
   shapes_bkg[0] = ZeroErrors(shapes_bkg[0])
 
-  rands = res.randomizePars()
-  p_vec = [None]*len(rands)
+  if not args.postfit:
+#    # note prefit plots not fully supported
+#    # they will work fine as long as no rebinning is performed
+#    # if you rebin the uncertainties for merged bins will be treated as being uncorrelated and summed in quadrature which will not be correct in general
 
-  for n in range(0,len(rands)):
-    p_vec[n] = cmb_bin.cp().bin([b]).GetParameter(rands[n].GetName())
+    shape = cmb_bin.cp().bin(bins).backgrounds().GetShapeWithUncertainty()
+    if args.datacard: shape = RestoreBinning(shape, ref)
+    shape = shape.Rebin(len(common_bins)-1, '', common_bins)
+    shapes_bkg[0]=shape.Clone()
 
-  ave=0.
+    print '!!!!', shapes_bkg[0].Integral()
+    err = cmb_bin.cp().bin(bins).backgrounds().GetUncertainty()
+    print 'Total Bkg = %.1f +/- %.1f (%.3f)' % (rate, err, err/rate)
 
-  for x in range(0, samples):
-    res.randomizePars()
+  # get total post error on background
+  if args.postfit:
+  
+    rands = res.randomizePars()
+    p_vec = [None]*len(rands)
+  
     for n in range(0,len(rands)):
-      if p_vec[n]: p_vec[n].set_val(rands[n].getVal())
+      p_vec[n] = cmb_bin.cp().bin([b]).GetParameter(rands[n].GetName())
+  
+    ave=0.
 
-    shapes_bkg_var = []
-    for b in bins:
-      shape = cmb_bin.cp().bin([b]).backgrounds().GetShape()
-      if args.datacard: shape = RestoreBinning(shape, ref)
-      shape = shape.Rebin(len(common_bins)-1, '', common_bins)
-      shape = ZeroErrors(shape) # zero errors to avoid confusion about what they represent
-      shapes_bkg_var.append(shape.Clone())
-
-    for s in shapes_bkg_var[1:]: shapes_bkg_var[0].Add(s)
-    ave+=abs(shapes_bkg_var[0].Integral()-shapes_bkg[0].Integral())**2
-
-
+    for x in range(0, samples):
+  
+      res.randomizePars()
+      for n in range(0,len(rands)):
+        if p_vec[n]: p_vec[n].set_val(rands[n].getVal())
+  
+      shapes_bkg_var = []
+      for b in bins:
+        shape = cmb_bin.cp().bin([b]).backgrounds().GetShape()
+        if args.datacard: shape = RestoreBinning(shape, ref)
+        shape = shape.Rebin(len(common_bins)-1, '', common_bins)
+        shape = ZeroErrors(shape) # zero errors to avoid confusion about what they represent
+        shapes_bkg_var.append(shape.Clone())
+  
+      for s in shapes_bkg_var[1:]: shapes_bkg_var[0].Add(s)
+      ave+=abs(shapes_bkg_var[0].Integral()-shapes_bkg[0].Integral())**2
+  
+  
+      for i in range(1, shapes_bkg[0].GetNbinsX()+1):
+        err = abs(shapes_bkg_var[0].GetBinContent(i)-shapes_bkg[0].GetBinContent(i))
+        shapes_bkg[0].SetBinError(i, err*err + shapes_bkg[0].GetBinError(i))
+  
+    # now need to set parameters back to nominal values
+    cmb.UpdateParameters(res_backup)
+  
+    ave = (ave/float(samples))**.5
+    print 'Total Bkg = %.1f +/- %.1f (%.3f)' % (shapes_bkg[0].Integral(), ave, ave/shapes_bkg[0].Integral())
+  
+    # to get the final error we need to take the sqrt and divide by the number of samples
     for i in range(1, shapes_bkg[0].GetNbinsX()+1):
-      err = abs(shapes_bkg_var[0].GetBinContent(i)-shapes_bkg[0].GetBinContent(i))
-      shapes_bkg[0].SetBinError(i, err*err + shapes_bkg[0].GetBinError(i))
-
-  # now need to set parameters back to nominal values
-  if args.postfit: cmb.UpdateParameters(res_backup)
-
-  ave = (ave/float(samples))**.5
-  print 'Total Bkg = %.1f +/- %.1f (%.3f)' % (shapes_bkg[0].Integral(), ave, ave/shapes_bkg[0].Integral())
-
-  # to get the final error we need to take the sqrt and divide by the number of samples
-  for i in range(1, shapes_bkg[0].GetNbinsX()+1):
-    err_total = (shapes_bkg[0].GetBinError(i)/float(samples))**.5
-    shapes_bkg[0].SetBinError(i,err_total)
+      err_total = (shapes_bkg[0].GetBinError(i)/float(samples))**.5
+      shapes_bkg[0].SetBinError(i,err_total)
 
   # now save our total background template with correct uncertainties
   fout.cd(dirname)

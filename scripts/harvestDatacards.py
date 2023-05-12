@@ -62,13 +62,21 @@ def NegativeBins(p):
 
 def NegativeYields(p):
   '''If process has negative yield then set to 0'''
-  if p.rate()<0: p.set_rate(0.)
-  
+  if (p.process() == "QCD"):
+     if p.rate()<0:
+        hist = p.shape()
+        #error = 0.0
+        for i in range(1,hist.GetNbinsX()+1):
+           bin_i = hist.GetBinContent(i)
+           error = hist.GetBinError(i)
+           bins = [hist.GetXaxis().GetBinLowEdge(i), hist.GetXaxis().GetBinUpEdge(i)]
+           print("Process: ",p.process()," has negative yields.", p.channel(), p.bin(), p.rate(), bins, bin_i, error) 
+        p.set_rate(0.)
 
 channels = ['zmm','mt']
 bkg_procs = {}
 # procs for the dimuon channel
-bkg_procs['zmm'] = ['ZL', 'ZTT','VVL', 'VVJ', 'TTL', 'TTJ','W','ZJ']
+bkg_procs['zmm'] = ['ZL', 'ZTT','VVT', 'VVJ', 'TTT', 'TTJ','W','ZJ']
 # procs for the mu+tauh channel
 bkg_procs['mt'] = ['ZL', 'ZJ', 'W', 'VVJ', 'TTJ', 'QCD']
 
@@ -263,7 +271,7 @@ cb.cp().channel(['mt']).process(['ZL']).AddSyst(cb, "CMS_l_fake_t_$BIN_$ERA", "l
 # now add unconstrained rate parameters
 
 # a common rate parameter that scales all MC processes in the di-muon channel with 2 genuine muons and the the ZTT, TTT, and VVT in the mu+tauh channel
-cb.cp().channel(['zmm']).process(['ZTT','VVL','TTL','ZL']).AddSyst(cb, "rate_DY_$ERA","rateParam",ch.SystMap()(1.0))
+cb.cp().channel(['zmm']).process(['ZTT','VVT','VVL','TTT','TTL','ZL']).AddSyst(cb, "rate_DY_$ERA","rateParam",ch.SystMap()(1.0))
 cb.cp().channel(['mt']).process(["ZTT","VVT","TTT"]).AddSyst(cb, "rate_DY_$ERA","rateParam",ch.SystMap()(1.0))
 
 # now add the POIs
@@ -396,7 +404,7 @@ for b in cb.cp().channel(['zmm']).bin_set():
 # Rebin histograms for mt channel using Auto Rebinning
 
 print(green("Zeroing NegativeYields"))
-cb.process(['QCD']).ForEachProc(NegativeYields)
+cb.ForEachProc(NegativeYields)
 
 rebin = AutoRebin()
 #rebin.SetBinThreshold(100)
