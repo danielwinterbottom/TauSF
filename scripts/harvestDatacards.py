@@ -201,7 +201,7 @@ dm11_bins = [401,402,403,404,405,406,407,408,409, 411,412,413,414,415,416,417,41
 
 # muon selection efficiency for second muon in di-muon dataset
 # better to shift the muon efficiency to the mt channel processes (will effectivly shift these in the opposite direction)
-cb.cp().channel(['mt']).process(['ZTT','TTT','VVT']).AddSyst(cb, "CMS_eff_m", "lnN", ch.SystMap()(0.98))
+cb.cp().channel(['mt']).process(['ZTT','TTT','TTL','VVT','VVL']).AddSyst(cb, "CMS_eff_m", "lnN", ch.SystMap()(0.98))
 
 
 # for jet->mu in dimuon data the second muon is a fake so add a seperate uncertainty for this - as this uncertainty is so large we don't need to add another uncertainty for the cross section or the lumi
@@ -222,10 +222,10 @@ cb.cp().process(['ZTT','ZL','ZJ']).AddSyst(cb, "CMS_htt_dyShape", "shape", ch.Sy
 cb.cp().process(['TTL','TTJ','TTT']).AddSyst(cb, "CMS_htt_ttbarShape", "shape", ch.SystMap()(1.0))
 
 # TES uncertainties
-cb.cp().channel(['mt']).process(['ZTT','TTT','VVT']).bin_id(dm0_bins+inclusive_bins).AddSyst(cb, "CMS_scale_t_1prong_$ERA","shape", ch.SystMap()(1.0))
-cb.cp().channel(['mt']).process(['ZTT','TTT','VVT']).bin_id(dm1_bins+inclusive_bins).AddSyst(cb, "CMS_scale_t_1prong1pizero_$ERA","shape", ch.SystMap()(1.0))
-cb.cp().channel(['mt']).process(['ZTT','TTT','VVT']).bin_id(dm10_bins+inclusive_bins).AddSyst(cb, "CMS_scale_t_3prong_$ERA", "shape", ch.SystMap()(1.0))
-cb.cp().channel(['mt']).process(['ZTT','TTT','VVT']).bin_id(dm11_bins+inclusive_bins).AddSyst(cb, "CMS_scale_t_3prong1pizero_$ERA", "shape", ch.SystMap()(1.0))
+cb.cp().channel(['mt']).process(['ZTT','TTT','TTL','VVT','VVL']).bin_id(dm0_bins+inclusive_bins).AddSyst(cb, "CMS_scale_t_1prong_$ERA","shape", ch.SystMap()(1.0))
+cb.cp().channel(['mt']).process(['ZTT','TTT','TTL','VVT','VVL']).bin_id(dm1_bins+inclusive_bins).AddSyst(cb, "CMS_scale_t_1prong1pizero_$ERA","shape", ch.SystMap()(1.0))
+cb.cp().channel(['mt']).process(['ZTT','TTT','TTL','VVT','VVL']).bin_id(dm10_bins+inclusive_bins).AddSyst(cb, "CMS_scale_t_3prong_$ERA", "shape", ch.SystMap()(1.0))
+cb.cp().channel(['mt']).process(['ZTT','TTT','TTL','VVT','VVL']).bin_id(dm11_bins+inclusive_bins).AddSyst(cb, "CMS_scale_t_3prong1pizero_$ERA", "shape", ch.SystMap()(1.0))
 
 # mu->tauh energy scale split by decay mode (might want to eventually make sure these don't get added for dm 10 and 11)
 cb.cp().channel(['mt']).process(['ZL']).bin_id(dm0_bins+inclusive_bins).AddSyst(cb, "CMS_ZLShape_$CHANNEL_1prong_$ERA", "shape", ch.SystMap()(1.00))
@@ -272,29 +272,29 @@ cb.cp().channel(['mt']).process(['ZL']).AddSyst(cb, "CMS_l_fake_t_$BIN_$ERA", "l
 
 # a common rate parameter that scales all MC processes in the di-muon channel with 2 genuine muons and the the ZTT, TTT, and VVT in the mu+tauh channel
 cb.cp().channel(['zmm']).process(['ZTT','VVT','VVL','TTT','TTL','ZL']).AddSyst(cb, "rate_DY_$ERA","rateParam",ch.SystMap()(1.0))
-cb.cp().channel(['mt']).process(["ZTT","VVT","TTT"]).AddSyst(cb, "rate_DY_$ERA","rateParam",ch.SystMap()(1.0))
+cb.cp().channel(['mt']).process(["ZTT","VVT",'VVL',"TTT",'TTL']).AddSyst(cb, "rate_DY_$ERA","rateParam",ch.SystMap()(1.0))
 
 # now add the POIs
-cb.cp().channel(['mt']).process(["ZTT", "TTT", "VVT"]).bin_id([1,11,21]).AddSyst(cb, "rate_tauSF_DMinclusive_pT20to25_$ERA","rateParam",ch.SystMap()(1.0))
-cb.cp().channel(['mt']).process(["ZTT", "TTT", "VVT"]).bin_id([2,12,22]).AddSyst(cb, "rate_tauSF_DMinclusive_pT25to30_$ERA","rateParam",ch.SystMap()(1.0))
-cb.cp().channel(['mt']).process(["ZTT", "TTT", "VVT"]).bin_id([3,13,23]).AddSyst(cb, "rate_tauSF_DMinclusive_pT30to35_$ERA","rateParam",ch.SystMap()(1.0))
-cb.cp().channel(['mt']).process(["ZTT", "TTT", "VVT"]).bin_id([4,14,24]).AddSyst(cb, "rate_tauSF_DMinclusive_pT35to40_$ERA","rateParam",ch.SystMap()(1.0))
-cb.cp().channel(['mt']).process(["ZTT", "TTT", "VVT"]).bin_id([5,15,25]).AddSyst(cb, "rate_tauSF_DMinclusive_pT40to50_$ERA","rateParam",ch.SystMap()(1.0))
-cb.cp().channel(['mt']).process(["ZTT", "TTT", "VVT"]).bin_id([6,16,26]).AddSyst(cb, "rate_tauSF_DMinclusive_pT50to60_$ERA","rateParam",ch.SystMap()(1.0))
-cb.cp().channel(['mt']).process(["ZTT", "TTT", "VVT"]).bin_id([7,17,27]).AddSyst(cb, "rate_tauSF_DMinclusive_pT60to80_$ERA","rateParam",ch.SystMap()(1.0))
-cb.cp().channel(['mt']).process(["ZTT", "TTT", "VVT"]).bin_id([8,18,28]).AddSyst(cb, "rate_tauSF_DMinclusive_pT80to100_$ERA","rateParam",ch.SystMap()(1.0))
-cb.cp().channel(['mt']).process(["ZTT", "TTT", "VVT"]).bin_id([9,19,29]).AddSyst(cb, "rate_tauSF_DMinclusive_pT100to200_$ERA","rateParam",ch.SystMap()(1.0))
+cb.cp().channel(['mt']).process(["ZTT", "TTT", 'TTL', "VVT", 'VVL']).bin_id([1,11,21]).AddSyst(cb, "rate_tauSF_DMinclusive_pT20to25_$ERA","rateParam",ch.SystMap()(1.0))
+cb.cp().channel(['mt']).process(["ZTT", "TTT", 'TTL', "VVT", 'VVL']).bin_id([2,12,22]).AddSyst(cb, "rate_tauSF_DMinclusive_pT25to30_$ERA","rateParam",ch.SystMap()(1.0))
+cb.cp().channel(['mt']).process(["ZTT", "TTT", 'TTL', "VVT", 'VVL']).bin_id([3,13,23]).AddSyst(cb, "rate_tauSF_DMinclusive_pT30to35_$ERA","rateParam",ch.SystMap()(1.0))
+cb.cp().channel(['mt']).process(["ZTT", "TTT", 'TTL', "VVT", 'VVL']).bin_id([4,14,24]).AddSyst(cb, "rate_tauSF_DMinclusive_pT35to40_$ERA","rateParam",ch.SystMap()(1.0))
+cb.cp().channel(['mt']).process(["ZTT", "TTT", 'TTL', "VVT", 'VVL']).bin_id([5,15,25]).AddSyst(cb, "rate_tauSF_DMinclusive_pT40to50_$ERA","rateParam",ch.SystMap()(1.0))
+cb.cp().channel(['mt']).process(["ZTT", "TTT", 'TTL', "VVT", 'VVL']).bin_id([6,16,26]).AddSyst(cb, "rate_tauSF_DMinclusive_pT50to60_$ERA","rateParam",ch.SystMap()(1.0))
+cb.cp().channel(['mt']).process(["ZTT", "TTT", 'TTL', "VVT", 'VVL']).bin_id([7,17,27]).AddSyst(cb, "rate_tauSF_DMinclusive_pT60to80_$ERA","rateParam",ch.SystMap()(1.0))
+cb.cp().channel(['mt']).process(["ZTT", "TTT", 'TTL', "VVT", 'VVL']).bin_id([8,18,28]).AddSyst(cb, "rate_tauSF_DMinclusive_pT80to100_$ERA","rateParam",ch.SystMap()(1.0))
+cb.cp().channel(['mt']).process(["ZTT", "TTT", 'TTL', "VVT", 'VVL']).bin_id([9,19,29]).AddSyst(cb, "rate_tauSF_DMinclusive_pT100to200_$ERA","rateParam",ch.SystMap()(1.0))
 
 for i, dm in enumerate([0,1,10,11]):
-  cb.cp().channel(['mt']).process(["ZTT", "TTT", "VVT"]).bin_id([(i+1)*100+1+x for x in [0,10,20]]).AddSyst(cb, "rate_tauSF_DM%i_pT20to25_$ERA" % dm,"rateParam",ch.SystMap()(1.0))
-  cb.cp().channel(['mt']).process(["ZTT", "TTT", "VVT"]).bin_id([(i+1)*100+2+x for x in [0,10,20]]).AddSyst(cb, "rate_tauSF_DM%i_pT25to30_$ERA" % dm,"rateParam",ch.SystMap()(1.0))
-  cb.cp().channel(['mt']).process(["ZTT", "TTT", "VVT"]).bin_id([(i+1)*100+3+x for x in [0,10,20]]).AddSyst(cb, "rate_tauSF_DM%i_pT30to35_$ERA" % dm,"rateParam",ch.SystMap()(1.0))
-  cb.cp().channel(['mt']).process(["ZTT", "TTT", "VVT"]).bin_id([(i+1)*100+4+x for x in [0,10,20]]).AddSyst(cb, "rate_tauSF_DM%i_pT35to40_$ERA" % dm,"rateParam",ch.SystMap()(1.0))
-  cb.cp().channel(['mt']).process(["ZTT", "TTT", "VVT"]).bin_id([(i+1)*100+5+x for x in [0,10,20]]).AddSyst(cb, "rate_tauSF_DM%i_pT40to50_$ERA" % dm,"rateParam",ch.SystMap()(1.0))
-  cb.cp().channel(['mt']).process(["ZTT", "TTT", "VVT"]).bin_id([(i+1)*100+6+x for x in [0,10,20]]).AddSyst(cb, "rate_tauSF_DM%i_pT50to60_$ERA" % dm,"rateParam",ch.SystMap()(1.0))
-  cb.cp().channel(['mt']).process(["ZTT", "TTT", "VVT"]).bin_id([(i+1)*100+7+x for x in [0,10,20]]).AddSyst(cb, "rate_tauSF_DM%i_pT60to80_$ERA" % dm,"rateParam",ch.SystMap()(1.0))
-  cb.cp().channel(['mt']).process(["ZTT", "TTT", "VVT"]).bin_id([(i+1)*100+8+x for x in [0,10,20]]).AddSyst(cb, "rate_tauSF_DM%i_pT80to100_$ERA" % dm,"rateParam",ch.SystMap()(1.0))
-  cb.cp().channel(['mt']).process(["ZTT", "TTT", "VVT"]).bin_id([(i+1)*100+9+x for x in [0,10,20]]).AddSyst(cb, "rate_tauSF_DM%i_pT100to200_$ERA" % dm,"rateParam",ch.SystMap()(1.0))
+  cb.cp().channel(['mt']).process(["ZTT", "TTT", 'TTL', "VVT", 'VVL']).bin_id([(i+1)*100+1+x for x in [0,10,20]]).AddSyst(cb, "rate_tauSF_DM%i_pT20to25_$ERA" % dm,"rateParam",ch.SystMap()(1.0))
+  cb.cp().channel(['mt']).process(["ZTT", "TTT", 'TTL', "VVT", 'VVL']).bin_id([(i+1)*100+2+x for x in [0,10,20]]).AddSyst(cb, "rate_tauSF_DM%i_pT25to30_$ERA" % dm,"rateParam",ch.SystMap()(1.0))
+  cb.cp().channel(['mt']).process(["ZTT", "TTT", 'TTL', "VVT", 'VVL']).bin_id([(i+1)*100+3+x for x in [0,10,20]]).AddSyst(cb, "rate_tauSF_DM%i_pT30to35_$ERA" % dm,"rateParam",ch.SystMap()(1.0))
+  cb.cp().channel(['mt']).process(["ZTT", "TTT", 'TTL', "VVT", 'VVL']).bin_id([(i+1)*100+4+x for x in [0,10,20]]).AddSyst(cb, "rate_tauSF_DM%i_pT35to40_$ERA" % dm,"rateParam",ch.SystMap()(1.0))
+  cb.cp().channel(['mt']).process(["ZTT", "TTT", 'TTL', "VVT", 'VVL']).bin_id([(i+1)*100+5+x for x in [0,10,20]]).AddSyst(cb, "rate_tauSF_DM%i_pT40to50_$ERA" % dm,"rateParam",ch.SystMap()(1.0))
+  cb.cp().channel(['mt']).process(["ZTT", "TTT", 'TTL', "VVT", 'VVL']).bin_id([(i+1)*100+6+x for x in [0,10,20]]).AddSyst(cb, "rate_tauSF_DM%i_pT50to60_$ERA" % dm,"rateParam",ch.SystMap()(1.0))
+  cb.cp().channel(['mt']).process(["ZTT", "TTT", 'TTL', "VVT", 'VVL']).bin_id([(i+1)*100+7+x for x in [0,10,20]]).AddSyst(cb, "rate_tauSF_DM%i_pT60to80_$ERA" % dm,"rateParam",ch.SystMap()(1.0))
+  cb.cp().channel(['mt']).process(["ZTT", "TTT", 'TTL', "VVT", 'VVL']).bin_id([(i+1)*100+8+x for x in [0,10,20]]).AddSyst(cb, "rate_tauSF_DM%i_pT80to100_$ERA" % dm,"rateParam",ch.SystMap()(1.0))
+  cb.cp().channel(['mt']).process(["ZTT", "TTT", 'TTL', "VVT", 'VVL']).bin_id([(i+1)*100+9+x for x in [0,10,20]]).AddSyst(cb, "rate_tauSF_DM%i_pT100to200_$ERA" % dm,"rateParam",ch.SystMap()(1.0))
 
 if useCRs:
   # add single rate params for each pT/DM bin
