@@ -267,7 +267,7 @@ for era in eras:
 # Populating Observation, Process and Systematic entries in the harvester instance
 for chn in channels:
   for era in eras:
-    if chn=='zmm': filename = 'shapes/ztt.datacard.m_vis.%s.%s.medium.root' % (chn,era)
+    if chn=='zmm': filename = 'shapes/ztt.datacard.m_vis.%s.%s.%s.root' % (chn,era,wp)
     else: filename = 'shapes/ztt.datacard.m_vis.%s.%s.%s.PFMet.root' % (chn,era,wp)
     print ">>>   file %s" % (filename)
     print('%s, %s' % (chn, era))

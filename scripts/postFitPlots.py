@@ -152,6 +152,13 @@ def getHistogram(fname, histname, dirname='', postfitmode='prefit', allowEmpty=F
         dircheck = False
         if dirname == '' : dircheck=True
         elif dirname in key.GetName(): dircheck=True
+        #print histo
+        #print key.GetName()
+        #print histname
+        #print isinstance(histo,ROOT.TH1F)
+        #print key.GetName()==histname
+        #print postfitmode in key.GetName()
+        #print dircheck
         if isinstance(histo,ROOT.TH1F) and key.GetName()==histname:
             if logx:
                 bin_width = histo.GetBinWidth(1)
@@ -168,7 +175,7 @@ def getHistogram(fname, histname, dirname='', postfitmode='prefit', allowEmpty=F
                     rethist.SetBinError(i,histo.GetBinError(i))
                 histo = rethist
             return [histo,outname]
-        elif isinstance(histo,ROOT.TDirectory) and postfitmode in key.GetName() and dircheck:
+        elif isinstance(histo,ROOT.TDirectory) and dircheck:
             return getHistogram(histo,histname, allowEmpty=allowEmpty, logx=logx)
     print 'Failed to find %(postfitmode)s histogram with name %(histname)s in file %(fname)s in directory %(dirname)s '%vars()
     if allowEmpty:
@@ -404,7 +411,7 @@ def main(args):
 
     file_dir_list = []
     file_dir_list = [file_dir]
-
+    print "%(log_x)s" %vars()
     bkghist = getHistogram(histo_file,'TotalBkg',file_dir, mode, logx=log_x)[0]
     
     if not args.use_asimov:
@@ -682,12 +689,13 @@ def main(args):
     pads[0].RedrawAxis()
     
     #Save as pdf with some semi sensible filename
-    shape_file_name = shape_file_name.replace(".root","_%(mode)s"%vars())
+    shape_file_name = shape_file_name.replace(".root","")
     shape_file_name = shape_file_name.replace("_shapes","")
+    print shape_file_name
     outname += shape_file_name+"_"+file_dir.strip("htt").strip("_")
     if(log_x): 
         outname+="_logx"
-    c2.SaveAs("plots/%(outname)s.pdf"%vars())
+    c2.SaveAs("%(outname)s.pdf"%vars())
 
     del c2
     histo_file.Close()
