@@ -467,7 +467,7 @@ else:
     if dm==11: systs = ['CMS_scale_t_3prong1pizero']
 
     if not useCRs:
-      systs.append('rate_W_DM%(dm)s' % vars())
+      systs.append('rate_QCD_DM%(dm)s' % vars())
       systs.append('rate_W_DM%(dm)s' % vars())
     systs.append('CMS_scale_jfake_DM%(dm)s' % vars())
     group_str = 'byDM%(dm)s group =' % vars()
