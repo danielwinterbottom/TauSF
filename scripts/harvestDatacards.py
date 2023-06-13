@@ -333,8 +333,25 @@ if useCRs:
   # additional rate uncertainties to account for extrapolations from CRs to SRs
   cb.cp().channel(['mt']).process(['W']).bin_id(cr_bins,False).AddSyst(cb, "CMS_W_extrap", "lnN", ch.SystMap()(1.2))
   cb.cp().channel(['mt']).process(['W']).bin_id(qcd_cr_bins).AddSyst(cb, "CMS_W_extrap", "lnN", ch.SystMap()(1.2))
-  cb.cp().channel(['mt']).process(['QCD']).bin_id(qcd_cr_bins,False).AddSyst(cb, "CMS_QCD_extrap", "lnN", ch.SystMap()(1.2))
- 
+  #cb.cp().channel(['mt']).process(['QCD']).bin_id(qcd_cr_bins,False).AddSyst(cb, "CMS_QCD_extrap", "lnN", ch.SystMap()(1.2))
+
+  # new QCD extrapolation uncertainties that come from QCD MC, also scale QCD in isolated regions to match central values
+  cb.cp().channel(['mt']).process(['QCD']).bin_id(qcd_cr_bins,False).AddSyst(cb, "CMS_QCD_extrap_syst", "lnN", ch.SystMap()(1.1)) # we keep a correlated 10% part from comparing QCD MC to data in region where we anti-isolate the tau
+  if options.wp=='loose':
+    qcd_scales =            [1.42, 1.10, 1.28, 1.48]
+    qcd_scales_uncerts    = [0.24, 0.13, 0.23, 0.40]
+  if options.wp=='medium':
+    qcd_scales =            [1.38, 1.11, 0.78, 2.54]
+    qcd_scales_uncerts    = [0.32, 0.18, 0.31, 1.05]
+  else:
+    # for tight and above use same numbers as we run out of stats in the QCD MC
+    qcd_scales =            [1.15, 1.21, 1.17, 2.16]
+    qcd_scales_uncerts    = [0.37, 0.26, 0.42, 1.17]
+
+  for i, dm in enumerate([0,1,10,11]):
+    cb.cp().channel(['mt']).process(['QCD']).bin_id(qcd_cr_bins,False).bin_id([(i+1)*100+1+x for x in [0,10,20]]).AddSyst(cb, "CMS_QCD_extrap_stat_DM%i" % dm, "lnN", ch.SystMap()(qcd_scales_uncerts[i]/qcd_scales[i]))
+    cb.cp().channel(['mt']).process(['QCD']).bin_id(qcd_cr_bins,False).bin_id([(i+1)*100+1+x for x in [0,10,20]]).ForEachProc(lambda x: x.set_rate(x.rate()*qcd_scales[i]))
+
   # for QCD CR the SF for MC were not derived for aiso events so introduce a new uncertainty for the MC processes in this region
   cb.cp().channel(['mt']).process(['QCD'],False).bin_id(qcd_cr_bins).AddSyst(cb, "CMS_aiso_eff", "lnN", ch.SystMap()(1.2))
 else:
