@@ -13,6 +13,8 @@ parser.add_argument('--file_total', '-f1', help= 'File containing the output of 
 parser.add_argument('--file_comb1', '-f2', help= 'File containing the output of MultiDimFit with by eras uncertainties fixed')
 parser.add_argument('--file_comb2', '-f3', help= 'File containing the output of MultiDimFit with by eras and by pT-bins uncertainties fixed')
 parser.add_argument('--file_comb3', '-f4', help= 'File containing the output of MultiDimFit with by eras, by pT-bins, and by DM-bins uncertainties fixed')
+parser.add_argument('--file_comb4', '-f5', help= 'File containing the output of MultiDimFit for +1-sigma TES shift', default=None)
+parser.add_argument('--file_comb5', '-f6', help= 'File containing the output of MultiDimFit for -1-sigma TES shift', default=None)
 parser.add_argument('-e', '--eras', dest='eras', type=str, default='all', help="Eras to make plots of pT dependent SFs for")
 parser.add_argument('-o', '--output_folder', dest='output_folder', type=str, default='./', help="Name of the output folder to save the root files and plots")
 args = parser.parse_args()
@@ -97,7 +99,7 @@ def SplitUncerts(g1,g2,g3,era,dm=None,g4=None):
       gout4.SetPointEYhigh(i,up_dmbins)
       gout4.SetPointEYlow(i,down_dmbins) 
       gout4.SetPoint(i,x,0.)
- 
+
   if dm is not None:
     return(gout1,gout2,gout3,gout4)
   else:
@@ -110,6 +112,11 @@ f3 = ROOT.TFile(args.file_comb2)
 
 if args.dm_bins:
   f4 = ROOT.TFile(args.file_comb3)
+
+sepTES=(args.file_comb4 and args.file_comb5)
+if sepTES:
+  f5 = ROOT.TFile(args.file_comb4)
+  f6 = ROOT.TFile(args.file_comb5)
 
 if args.dm_bins: out_file='split_uncertainties_dmbins.root'
 else: out_file='split_uncertainties.root'
@@ -130,7 +137,16 @@ for era in eras:
     g2 = f2.Get(graph_name)
     g3 = f3.Get(graph_name)
     g4=None
-    
+    g5=None
+    g6=None 
+   
+    if sepTES:
+      g5 = f5.Get(graph_name)
+      g6 = f6.Get(graph_name)
+      g5.SetName(graph_name+'_TESUp')
+      g6.SetName(graph_name+'_TESDown')
+      g5.Write()
+      g6.Write()
     if args.dm_bins:
       g4 = f4.Get(graph_name)
       gout1,gout2,gout3,gout4 = SplitUncerts(g1,g2,g3,era,dm,g4)
@@ -281,6 +297,14 @@ if args.dm_bins:
 
       # we also fit the nominal SFs again, just to make sure everything is consistent with the uncertainties
       fit_nom, h_uncert_nom, h_nom, uncerts_nom = FitSF(g,func=fit_func)
+
+      if sepTES:
+        gr_up=fout.Get(graph_name+'_TESUp')
+        gr_down=fout.Get(graph_name+'_TESDown')
+        fit_up, h_uncert_up, h_up, uncerts_up = FitSF(gr_up,func=fit_func)
+        fit_down, h_uncert_down, h_down, uncerts_down = FitSF(gr_down,func=fit_func)
+        fit_up.Write()
+        fit_down.Write()
 
       g.Write(g.GetName()+'_fitted')
       fit_nom.Write()
