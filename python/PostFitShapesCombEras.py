@@ -182,9 +182,20 @@ for bin in bins_grouped:
   procs = cmb_bin.cp().process_set()
   shapes_procs = {}
   for p in procs:
+    print(p)
     shapes_procs[p] = []
     for b in bins:
       shape = cmb_bin.cp().bin([b]).process([p]).GetShape()
+      if p == "QCD": 
+         shape = cmb_bin.cp().bin([b]).process([p]).GetShapeWithUncertainty()
+         rate = cmb_bin.cp().process([p]).backgrounds().GetRate() 
+         err = cmb_bin.cp().bin(bins).backgrounds().GetUncertainty()
+         print 'QCD Bkg = %.1f +/- %.1f (%.3f)' % (rate, err, err/rate)
+      if p == "W": 
+         shape = cmb_bin.cp().bin([b]).process([p]).GetShapeWithUncertainty()
+         rate = cmb_bin.cp().process([p]).backgrounds().GetRate() 
+         err = cmb_bin.cp().bin(bins).backgrounds().GetUncertainty()
+         print 'W Bkg = %.1f +/- %.1f (%.3f)' % (rate, err, err/rate)
       if args.datacard: shape = RestoreBinning(shape, ref)
       shape = shape.Rebin(len(common_bins)-1, '', common_bins)
       shape = ZeroErrors(shape) # zero errors to avoid confusion about what they represent
