@@ -550,6 +550,12 @@ for s in systs_for_group:
 print group_str
 cb.AddDatacardLineAtEnd(group_str)
 
+tes_uncerts = ['CMS_scale_t_1prong', 'CMS_scale_t_1prong1pizero', 'CMS_scale_t_3prong', 'CMS_scale_t_3prong1pizero']
+tes_group_string = 'TES group ='
+for s in tes_uncerts:
+  for era in eras: tes_group_string+=' '+s+'_'+era 
+cb.AddDatacardLineAtEnd(tes_group_string)
+
 # Write datacards
 print green(">>> writing datacards...")
 datacardtxt  = "%s/cmb/$BIN.txt"%(output_folder)

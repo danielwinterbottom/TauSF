@@ -13,6 +13,8 @@ parser.add_argument('--file_total', '-f1', help= 'File containing the output of 
 parser.add_argument('--file_comb1', '-f2', help= 'File containing the output of MultiDimFit with by eras uncertainties fixed')
 parser.add_argument('--file_comb2', '-f3', help= 'File containing the output of MultiDimFit with by eras and by pT-bins uncertainties fixed')
 parser.add_argument('--file_comb3', '-f4', help= 'File containing the output of MultiDimFit with by eras, by pT-bins, and by DM-bins uncertainties fixed')
+parser.add_argument('--file_comb4', '-f5', help= 'File containing the output of MultiDimFit for +1-sigma TES shift', default=None)
+parser.add_argument('--file_comb5', '-f6', help= 'File containing the output of MultiDimFit for -1-sigma TES shift', default=None)
 parser.add_argument('-e', '--eras', dest='eras', type=str, default='all', help="Eras to make plots of pT dependent SFs for")
 parser.add_argument('-o', '--output_folder', dest='output_folder', type=str, default='./', help="Name of the output folder to save the root files and plots")
 args = parser.parse_args()
@@ -21,6 +23,27 @@ if args.eras == 'all': eras = ['2016_preVFP', '2016_postVFP', '2017', '2018']
 else: eras=args.eras.split(',')
 
 output_folder=args.output_folder
+
+
+def GraphDivideErrors(num, den):
+    res = num.Clone()
+    for i in xrange(num.GetN()):
+        if type(res) is ROOT.TGraphAsymmErrors:
+          if den.Eval(res.GetX()[i]) == 0:
+              res.GetEYhigh()[i] = 0
+              res.GetEYlow()[i] = 0
+          else:
+              if res.GetY()[i] < 1e-100 or den.GetY()[i] < 1e-100:
+                res.GetEYhigh()[i] = 0
+                res.GetEYlow()[i] = 0
+              else:
+                res.GetEYhigh()[i] = math.sqrt((res.GetEYhigh()[i]/res.GetY()[i])**2 + (den.GetEYhigh()[i]/den.GetY()[i])**2)
+                res.GetEYlow()[i] = math.sqrt((res.GetEYlow()[i]/res.GetY()[i])**2 + (den.GetEYlow()[i]/den.GetY()[i])**2)
+        if den.Eval(res.GetX()[i]) == 0: res.GetY()[i] = 0
+        else: res.GetY()[i] = res.GetY()[i]/den.Eval(res.GetX()[i])
+    return res
+
+
 
 def SplitUncerts(g1,g2,g3,era,dm=None,g4=None):
 
@@ -33,7 +56,10 @@ def SplitUncerts(g1,g2,g3,era,dm=None,g4=None):
   gout3.SetName(name+'_syst_%(era)s' % vars()) 
   if dm is not None: 
     gout4=g1.Clone()
-    gout4.SetName(name+'_syst_dm%(dm)i_%(era)s' % vars())  
+    gout4.SetName(name+'_syst_dm%(dm)i_%(era)s' % vars()) 
+    #gout5 will combine uncerts for syst_dm_era with syst_era as for split TES scheme the syst_dm_era component is very small anyway so finer splitting is not very well motivated 
+    gout5=g1.Clone()
+    gout5.SetName(name+'_syst_alldms_%(era)s' % vars()) 
 
   for i in range(0,g1.GetN()):
     up_total=g1.GetErrorYhigh(i)
@@ -97,9 +123,13 @@ def SplitUncerts(g1,g2,g3,era,dm=None,g4=None):
       gout4.SetPointEYhigh(i,up_dmbins)
       gout4.SetPointEYlow(i,down_dmbins) 
       gout4.SetPoint(i,x,0.)
- 
+     
+      gout5.SetPointEYhigh(i,(up_dmbins**2+up_ptbins**2)**.5)
+      gout5.SetPointEYlow(i,(down_dmbins**2+down_ptbins**2)**.5)
+      gout5.SetPoint(i,x,0.)
+
   if dm is not None:
-    return(gout1,gout2,gout3,gout4)
+    return(gout1,gout2,gout3,gout4,gout5)
   else:
     return(gout1,gout2,gout3)
 
@@ -110,6 +140,11 @@ f3 = ROOT.TFile(args.file_comb2)
 
 if args.dm_bins:
   f4 = ROOT.TFile(args.file_comb3)
+
+sepTES=(args.file_comb4 and args.file_comb5)
+if sepTES:
+  f5 = ROOT.TFile(args.file_comb4)
+  f6 = ROOT.TFile(args.file_comb5)
 
 if args.dm_bins: out_file='split_uncertainties_dmbins.root'
 else: out_file='split_uncertainties.root'
@@ -130,12 +165,22 @@ for era in eras:
     g2 = f2.Get(graph_name)
     g3 = f3.Get(graph_name)
     g4=None
-    
+    g5=None
+    g6=None 
+   
+    if sepTES:
+      g5 = f5.Get(graph_name)
+      g6 = f6.Get(graph_name)
+      g5.SetName(graph_name+'_TESUp')
+      g6.SetName(graph_name+'_TESDown')
+      g5.Write()
+      g6.Write()
     if args.dm_bins:
       g4 = f4.Get(graph_name)
-      gout1,gout2,gout3,gout4 = SplitUncerts(g1,g2,g3,era,dm,g4)
+      gout1,gout2,gout3,gout4,gout5 = SplitUncerts(g1,g2,g3,era,dm,g4)
       fout.cd()
       gout4.Write() 
+      gout5.Write() 
     else:
       gout1,gout2,gout3 = SplitUncerts(g1,g2,g3,era)
   
@@ -238,8 +283,8 @@ def CompareSystsPlot(nom, systs,output_name):
   nom_r.GetXaxis().SetTitle('p_{T} (GeV)')
   nom_r.GetYaxis().SetTitle('relative uncertainty')
   nom_r.SetTitle('')
-  nom_r.SetMaximum(1.1)
-  nom_r.SetMinimum(0.9)
+  nom_r.SetMaximum(1.15)
+  nom_r.SetMinimum(0.85)
   nom_r.Draw() 
   leg = ROOT.TLegend(0.15,0.92,0.9,0.96)
   leg.SetNColumns(4)
@@ -260,7 +305,8 @@ if args.dm_bins:
       graph_name = 'DM%(dm)s_%(era)s' % vars()
 
       g=fout.Get(graph_name)
-      systs = ['_syst_alleras', '_syst_%(era)s' % vars(),  '_syst_dm%(dm)s_%(era)s' % vars()]
+      if not gout5: systs = ['_syst_alleras', '_syst_%(era)s' % vars(),  '_syst_dm%(dm)s_%(era)s' % vars()]
+      else: systs = ['_syst_alleras', '_syst_alldms_%(era)s' % vars()]
       systs_to_plot = []
 
       for syst in systs:
@@ -281,6 +327,39 @@ if args.dm_bins:
 
       # we also fit the nominal SFs again, just to make sure everything is consistent with the uncertainties
       fit_nom, h_uncert_nom, h_nom, uncerts_nom = FitSF(g,func=fit_func)
+
+      if sepTES:
+        # TES shifts are not described very well by pol1 fit so we use a different procedure
+        # We divide the shifts by the nominal, then fit with a error function + pol0
+        # then to get final function we multiply this by the pol1 fit for the nominal SFs
+        gr_up=fout.Get(graph_name+'_TESUp').Clone()
+        gr_down=fout.Get(graph_name+'_TESDown').Clone()
+        gr_nom=fout.Get(graph_name)
+        gr_up.SetName(graph_name+'_TESUp_relative')
+        gr_down.SetName(graph_name+'_TESDown_relative')
+        gr_up=GraphDivideErrors(gr_up,gr_nom) 
+        gr_down=GraphDivideErrors(gr_down,gr_nom)
+        gr_up.Write() 
+        gr_down.Write() 
+        fit_rel_up, h_uncert_up, h_up, uncerts_up = FitSF(gr_up,func='erf_rev')
+        fit_rel_down, h_uncert_down, h_down, uncerts_down = FitSF(gr_down,func='erf')
+        func_rel_up = str(fit_rel_up.GetExpFormula('p'))
+        func_rel_down = str(fit_rel_down.GetExpFormula('p'))
+        func_nom=str(fit_nom.GetExpFormula('p'))
+        if func_nom[0]!='(': func_nom='('+func_nom+')'
+        if func_rel_up[0]!='(': func_rel_up='('+func_rel_up+')'
+        if func_rel_down[0]!='(': func_rel_down='('+func_rel_down+')'
+        PlotSF(gr_up, h_uncert_up, 'TESUp_relative_DM%(dm)s_%(era)s' % vars(), title='DM%(dm)s, %(era)s' % vars(), output_folder=output_folder)
+        PlotSF(gr_down, h_uncert_down, 'TESDown_relative_DM%(dm)s_%(era)s' % vars(), title='DM%(dm)s, %(era)s' % vars(), output_folder=output_folder)
+
+        fit_up = ROOT.TF1(graph_name+'_TESUp_fit',func_rel_up+'*'+func_nom,20,200)       
+        fit_down = ROOT.TF1(graph_name+'_TESDown_fit',func_rel_down+'*'+func_nom,20,200)       
+ 
+        fit_rel_up.Write()
+        fit_rel_down.Write()
+        fit_up.Write()
+        fit_down.Write()
+        systs_to_plot.append((fit_up.Clone(), fit_down.Clone()))
 
       g.Write(g.GetName()+'_fitted')
       fit_nom.Write()
