@@ -53,9 +53,9 @@ combineTool.py -m 125 -M MultiDimFit --redefineSignalPOIs "${pois}" --saveWorksp
 echo "Making graphs with SFs"
 
 if [ "${working_pointVsEle}" == True ]; then
-   for x in "" .freeze_byErasAndBins .freeze_byErasAndBins_byBins .freeze_byErasAndBins_byBins_byDM .TESUp .TESDown; do python scripts/makeSFGraphs.py  -f outputs/${output_dir}/cmb/higgsCombine.ztt.bestfit.singles.postfit${x}.MultiDimFit.mH125.root --dm-bins --saveJson --wp="${working_pointVsJets}vsjet_tightvsele" -e 2018; done
+   for x in .freeze_byErasAndBins .freeze_byErasAndBins_byBins .freeze_byErasAndBins_byBins_byDM .TESUp .TESDown ""; do python scripts/makeSFGraphs.py  -f outputs/${output_dir}/cmb/higgsCombine.ztt.bestfit.singles.postfit${x}.MultiDimFit.mH125.root --dm-bins --saveJson --wp="${working_pointVsJets}vsjet_tightvsele" -e 2018; done
 else
-   for x in "" .freeze_byErasAndBins .freeze_byErasAndBins_byBins .freeze_byErasAndBins_byBins_byDM .TESUp .TESDown; do python scripts/makeSFGraphs.py  -f outputs/${output_dir}/cmb/higgsCombine.ztt.bestfit.singles.postfit${x}.MultiDimFit.mH125.root --dm-bins --saveJson --wp="${working_pointVsJets}vsjet_vvloosevsele" -e 2018; done
+   for x in .freeze_byErasAndBins .freeze_byErasAndBins_byBins .freeze_byErasAndBins_byBins_byDM .TESUp .TESDown ""; do python scripts/makeSFGraphs.py  -f outputs/${output_dir}/cmb/higgsCombine.ztt.bestfit.singles.postfit${x}.MultiDimFit.mH125.root --dm-bins --saveJson --wp="${working_pointVsJets}vsjet_vvloosevsele" -e 2018; done
 fi
 
 echo "Making graphs with decomposed uncertainties"
