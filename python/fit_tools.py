@@ -93,8 +93,14 @@ def crystalballEfficiencyCorrParams(x, par):
 def FitSF(h,func='erf'):
   h_uncert = ROOT.TH1D(h.GetName()+'_uncert',"",1000,0,200)
   if func == 'erf':
-    f2 = ROOT.TF1("f2","[0]*TMath::Erf((x-[1])/[2])",20.,200.)
+    f2 = ROOT.TF1("f2","[0]*TMath::Erf((x-[1])/[2])+[3]",20.,200.)
     f2.SetParameter(2,40)
+  elif func == 'erf_rev':
+    f2 = ROOT.TF1("f2","[0]*TMath::Erf((-x-[1])/[2])+[3]",20.,200.)
+    f2.SetParameter(0,0.1)
+    f2.SetParameter(1,-40)
+    f2.SetParameter(2,10)
+    f2.SetParameter(3,1)
   elif func == 'erf_extra':
     #error function with additional linear component
     f2 = ROOT.TF1("f2","[0]*(TMath::Erf((x-[1])/[2]) + [3] + [4]*x)",20.,200.) 
