@@ -2,6 +2,7 @@ import ROOT
 import math
 from array import array
 from argparse import ArgumentParser
+import json
 from CombineHarvester.TauSF.fit_tools import DecomposeUncerts, FitSF, PlotSF
 ROOT.gROOT.SetBatch(1)
 
@@ -9,6 +10,9 @@ ROOT.gROOT.SetBatch(1)
 description = '''This script makes the graphs containing the split uncertainties.'''
 parser = ArgumentParser(prog="decoupleUncerts",description=description,epilog="Success!")
 parser.add_argument('--dm-bins', dest='dm_bins', default=False, action='store_true', help="if specified then the mu+tauh channel fits are also split by tau decay-mode")
+parser.add_argument('--split-fit', dest='split_fit', default=False, action='store_true', help="if specified then split the pT dependent fits into 2 regions < 50 GeV and > 50 GeV")
+parser.add_argument('--saveJson', dest='saveJson', default=False, action='store_true', help="if specified then store the scale factors into jsons")
+parser.add_argument('--wp', dest='wp', type=str, default='dummy_wp', help="The WP the SF are produced for (only used for storing json correctly)")
 parser.add_argument('--file_total', '-f1', help= 'File containing the output of MultiDimFit with all uncertainties floating')
 parser.add_argument('--file_comb1', '-f2', help= 'File containing the output of MultiDimFit with by eras uncertainties fixed')
 parser.add_argument('--file_comb2', '-f3', help= 'File containing the output of MultiDimFit with by eras and by pT-bins uncertainties fixed')
@@ -148,6 +152,9 @@ if sepTES:
 
 if args.dm_bins: out_file='split_uncertainties_dmbins.root'
 else: out_file='split_uncertainties.root'
+
+if args.split_fit: 
+  out_file.replace('.root','_split_fit.root')
 
 fout = ROOT.TFile(output_folder+'/'+out_file,'RECREATE')
 
@@ -295,12 +302,16 @@ def CompareSystsPlot(nom, systs,output_name):
   leg.Draw()
   c1.Print(output_name+'.pdf')
 
+dm_binned_strings={}
 if args.dm_bins:
+
 
   for era in eras:
     for dm in [0,1,10,11]:
 
-      fit_func='pol1'
+      if args.split_fit: fit_func='pol1_split'
+      else: fit_func='pol1'
+     
 #      if dm==1 and era != '2016_preVFP': fit_func='erf'
       graph_name = 'DM%(dm)s_%(era)s' % vars()
 
@@ -349,8 +360,8 @@ if args.dm_bins:
         if func_nom[0]!='(': func_nom='('+func_nom+')'
         if func_rel_up[0]!='(': func_rel_up='('+func_rel_up+')'
         if func_rel_down[0]!='(': func_rel_down='('+func_rel_down+')'
-        PlotSF(gr_up, h_uncert_up, 'TESUp_relative_DM%(dm)s_%(era)s' % vars(), title='DM%(dm)s, %(era)s' % vars(), output_folder=output_folder)
-        PlotSF(gr_down, h_uncert_down, 'TESDown_relative_DM%(dm)s_%(era)s' % vars(), title='DM%(dm)s, %(era)s' % vars(), output_folder=output_folder)
+        PlotSF(gr_up, h_uncert_up, 'TESUp_relative_DM%(dm)s_%(era)s' % vars()+ ('_split_fit' if args.split_fit else ''), title='DM%(dm)s, %(era)s' % vars(), output_folder=output_folder)
+        PlotSF(gr_down, h_uncert_down, 'TESDown_relative_DM%(dm)s_%(era)s' % vars()+ ('_split_fit' if args.split_fit else ''), title='DM%(dm)s, %(era)s' % vars(), output_folder=output_folder)
 
         fit_up = ROOT.TF1(graph_name+'_TESUp_fit',func_rel_up+'*'+func_nom,20,200)       
         fit_down = ROOT.TF1(graph_name+'_TESDown_fit',func_rel_down+'*'+func_nom,20,200)       
@@ -384,12 +395,31 @@ if args.dm_bins:
         x[2].Write()
 
       # make some plots of SFs and uncertainties
-      PlotSF(g, h_uncert_nom, 'tau_sf_DM%(dm)s_%(era)s' % vars(), title='DM%(dm)s, %(era)s' % vars(), output_folder=output_folder)
-      CompareSystsPlot(fit_nom,systs_to_plot,output_folder+'/'+'uncerts_systs_tau_sf_DM%(dm)s_%(era)s' % vars())
-      CompareSystsPlot(fit_nom,stats_to_plot,output_folder+'/'+'uncerts_stats_tau_sf_DM%(dm)s_%(era)s' % vars())
+      PlotSF(g, h_uncert_nom, 'tau_sf_DM%(dm)s_%(era)s' % vars()+ ('_split_fit' if args.split_fit else ''), title='DM%(dm)s, %(era)s' % vars(), output_folder=output_folder)
+      CompareSystsPlot(fit_nom,systs_to_plot,output_folder+'/'+'uncerts_systs_tau_sf_DM%(dm)s_%(era)s' % vars()+ ('_split_fit' if args.split_fit else ''))
+      CompareSystsPlot(fit_nom,stats_to_plot,output_folder+'/'+'uncerts_stats_tau_sf_DM%(dm)s_%(era)s' % vars()+ ('_split_fit' if args.split_fit else ''))
+      dm_binned_strings[g.GetName()] = str(fit_nom.GetExpFormula('p')).replace('x','min(max(pt_2,20.),140.)')
 
 # make plots of pT-dependent SFs
 if not args.dm_bins:
   for era in eras:
     systs=[fout.Get('DMinclusive_%(era)s_syst_alleras' % vars()).Clone(), fout.Get('DMinclusive_%(era)s_syst_%(era)s' % vars()).Clone()]
     PlotpTBinned(fout.Get('DMinclusive_%(era)s' % vars()),systs,output_folder+'/'+'tau_sf_DMinclusive_%(era)s' % vars())
+
+if args.dm_bins and args.saveJson:
+  wp=args.wp
+  sf_map = {}
+  sf_map[wp] = {}
+  for era in eras:
+    print 'DM-binned SFs for era %s:' %era
+    out='((gen_match_2!=5) + (gen_match_2==5)*('
+    for dm in [0,1,10,11]:
+      out+='(tau_decay_mode_2==%i)*(%s)+' % (dm, dm_binned_strings['DM%i_%s' % (dm,era)])
+    out=out[:-1]
+    out+='))'
+    sf_map[wp][era] = out
+    print out
+
+  json_out_name = output_folder+'tau_SF_strings_dm_binned_%(wp)s' % vars() + ('_split_fit.json' if args.split_fit else '.json')
+  with open(json_out_name, 'w') as fp:
+    json.dump(sf_map, fp, sort_keys=True, indent=4)
