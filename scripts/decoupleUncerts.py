@@ -154,7 +154,7 @@ if args.dm_bins: out_file='split_uncertainties_dmbins.root'
 else: out_file='split_uncertainties.root'
 
 if args.split_fit: 
-  out_file.replace('.root','_split_fit.root')
+  out_file=out_file.replace('.root','_split_fit.root')
 
 fout = ROOT.TFile(output_folder+'/'+out_file,'RECREATE')
 
@@ -341,33 +341,37 @@ if args.dm_bins:
 
       if sepTES:
         # TES shifts are not described very well by pol1 fit so we use a different procedure
-        # We divide the shifts by the nominal, then fit with a error function + pol0
-        # then to get final function we multiply this by the pol1 fit for the nominal SFs
+        # We divide the shifts by the nominal, then fit with unless the split fit option is used
+        # if split fit option is not used we use a different procedure whereby we fit relative uncertainties using 
+        # an error function + pol0 and then to get final function we multiply this by the pol1 fit for the nominal SFs
         gr_up=fout.Get(graph_name+'_TESUp').Clone()
         gr_down=fout.Get(graph_name+'_TESDown').Clone()
-        gr_nom=fout.Get(graph_name)
-        gr_up.SetName(graph_name+'_TESUp_relative')
-        gr_down.SetName(graph_name+'_TESDown_relative')
-        gr_up=GraphDivideErrors(gr_up,gr_nom) 
-        gr_down=GraphDivideErrors(gr_down,gr_nom)
-        gr_up.Write() 
-        gr_down.Write() 
-        fit_rel_up, h_uncert_up, h_up, uncerts_up = FitSF(gr_up,func='erf_rev')
-        fit_rel_down, h_uncert_down, h_down, uncerts_down = FitSF(gr_down,func='erf')
-        func_rel_up = str(fit_rel_up.GetExpFormula('p'))
-        func_rel_down = str(fit_rel_down.GetExpFormula('p'))
-        func_nom=str(fit_nom.GetExpFormula('p'))
-        if func_nom[0]!='(': func_nom='('+func_nom+')'
-        if func_rel_up[0]!='(': func_rel_up='('+func_rel_up+')'
-        if func_rel_down[0]!='(': func_rel_down='('+func_rel_down+')'
-        PlotSF(gr_up, h_uncert_up, 'TESUp_relative_DM%(dm)s_%(era)s' % vars()+ ('_split_fit' if args.split_fit else ''), title='DM%(dm)s, %(era)s' % vars(), output_folder=output_folder)
-        PlotSF(gr_down, h_uncert_down, 'TESDown_relative_DM%(dm)s_%(era)s' % vars()+ ('_split_fit' if args.split_fit else ''), title='DM%(dm)s, %(era)s' % vars(), output_folder=output_folder)
-
-        fit_up = ROOT.TF1(graph_name+'_TESUp_fit',func_rel_up+'*'+func_nom,20,200)       
-        fit_down = ROOT.TF1(graph_name+'_TESDown_fit',func_rel_down+'*'+func_nom,20,200)       
+        if args.split_fit:
+          fit_up, h_uncert_up, h_up, uncerts_up = FitSF(gr_up,func=fit_func)
+          fit_down, h_uncert_down, h_down, uncerts_down = FitSF(gr_down,func=fit_func)
+        else:
+          gr_nom=fout.Get(graph_name)
+          gr_up.SetName(graph_name+'_TESUp_relative')
+          gr_down.SetName(graph_name+'_TESDown_relative')
+          gr_up=GraphDivideErrors(gr_up,gr_nom) 
+          gr_down=GraphDivideErrors(gr_down,gr_nom)
+          gr_up.Write() 
+          gr_down.Write() 
+          fit_rel_up, h_uncert_up, h_up, uncerts_up = FitSF(gr_up,func='erf_rev')
+          fit_rel_down, h_uncert_down, h_down, uncerts_down = FitSF(gr_down,func='erf')
+          func_rel_up = str(fit_rel_up.GetExpFormula('p'))
+          func_rel_down = str(fit_rel_down.GetExpFormula('p'))
+          func_nom=str(fit_nom.GetExpFormula('p'))
+          if func_nom[0]!='(': func_nom='('+func_nom+')'
+          if func_rel_up[0]!='(': func_rel_up='('+func_rel_up+')'
+          if func_rel_down[0]!='(': func_rel_down='('+func_rel_down+')'
+          PlotSF(gr_up, h_uncert_up, 'TESUp_relative_DM%(dm)s_%(era)s' % vars()+ ('_split_fit' if args.split_fit else ''), title='DM%(dm)s, %(era)s' % vars(), output_folder=output_folder)
+          PlotSF(gr_down, h_uncert_down, 'TESDown_relative_DM%(dm)s_%(era)s' % vars()+ ('_split_fit' if args.split_fit else ''), title='DM%(dm)s, %(era)s' % vars(), output_folder=output_folder)
+          fit_rel_up.Write()
+          fit_rel_down.Write()
+          fit_up = ROOT.TF1(graph_name+'_TESUp_fit',func_rel_up+'*'+func_nom,20,200)       
+          fit_down = ROOT.TF1(graph_name+'_TESDown_fit',func_rel_down+'*'+func_nom,20,200)       
  
-        fit_rel_up.Write()
-        fit_rel_down.Write()
         fit_up.Write()
         fit_down.Write()
         systs_to_plot.append((fit_up.Clone(), fit_down.Clone()))

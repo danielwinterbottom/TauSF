@@ -13,6 +13,7 @@ description = '''This script makes datacards with CombineHarvester for performin
 parser = ArgumentParser(prog="harvesterDatacards",description=description,epilog="Success!")
 parser.add_argument('-c', '--config', dest='config', type=str, default='config/harvestDatacards.yml', action='store', help="set config file")
 parser.add_argument('-o', '--output_folder', dest='output_folder', type=str, default='', help="set output folder name")
+parser.add_argument('-e', '--eras', dest='eras', type=str, default='', help="set eras to be processed")
 parser.add_argument('--dm-bins', dest='dm_bins', default=False, action='store_true', help="if specified then the mu+tauh channel fits are also split by tau decay-mode")
 parser.add_argument('--wp', dest='wp', default='medium', help="The vs jet WP to measure SFs for")
 parser.add_argument('--tightVsEle', dest='tightVsEle', default=False, action='store_true', help="if specified then use the tight WP of the vs electron ID, otherwise the vvloose WP is used")
@@ -34,6 +35,7 @@ output_folder = setup["output_folder"]
 era_tag = setup["eras"]
 
 if args.output_folder: output_folder = args.output_folder
+if args.eras: era_tag = args.eras
 
 if era_tag == 'all': eras = ['2016_preVFP', '2016_postVFP', '2017', '2018'] # add other eras later
 else: eras = era_tag.split(',')

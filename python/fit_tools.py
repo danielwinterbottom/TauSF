@@ -116,6 +116,8 @@ def FitSF(h,func='erf'):
     f2.SetParameter(4,par[4]) #[4]
   elif func == 'pol0_gt40':
     f2 = ROOT.TF1("f2",'pol0',40.,200.)
+  elif func=='pol1_split':
+    f2 = ROOT.TF1("f2",'(x<50)*([0]+[1]*x)+(x>=50)*([2]+[3]*x)',20.,200.)
   elif 'pol' in func:
     f2 = ROOT.TF1("f2",func,20.,200.)
   else:
