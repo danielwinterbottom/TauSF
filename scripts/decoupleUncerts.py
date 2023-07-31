@@ -454,4 +454,4 @@ def compute_p_value(chi2, ndf):
     return p_value
 
 p_value = ROOT.TMath.Prob(tot_chi2, int(tot_ndf))
-print 'Total chi2/NDF, p-value = %.2f/%.0f, %.6f ' % (tot_chi2, tot_ndf, p_value) 
+print '\nTotal chi2/NDF, p-value = %.2f/%.0f, %.6f ' % (tot_chi2, tot_ndf, p_value) 
