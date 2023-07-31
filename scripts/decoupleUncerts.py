@@ -318,7 +318,7 @@ if args.dm_bins:
 
       if args.split_fit: fit_func='pol1_split'
       elif args.split_fit_join: fit_func='pol1_split_constrained'
-      else: fit_func='sigmoid'#'pol1'
+      else: fit_func='pol_order-2'
      
 #      if dm==1 and era != '2016_preVFP': fit_func='erf'
       graph_name = 'DM%(dm)s_%(era)s' % vars()

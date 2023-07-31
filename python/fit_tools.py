@@ -118,15 +118,11 @@ def FitSF(h,func='erf'):
     f2 = ROOT.TF1("f2","(TMath::Erf((x/[0])) + [1])",20.,200.)
     f2.SetParameter(0,40)
     f2.SetParameter(2,0)
-  elif func == 'sigmoid':
-   f2 = ROOT.TF1("f2","([0]-TMath::Erf((x/[1])))",20.,200.)
-   #f2 = ROOT.TF1("f2","([0])",20.,200.)
-   f2.SetParameter(0,0.1)
-   f2.SetParameter(1,1)
+  elif func == 'logx':
    f2 = ROOT.TF1("f2", "[0] + [1]*TMath::Log(x)", 20., 200.)
-   f2 = ROOT.TF1("f2", "[0] + [1]/pow(x,2)", 20., 200.)
-   #f2.SetParLimits(1,0.,10)
-   #f2.SetParLimits(1,-100,100)
+  elif 'pol_order' in func:
+   order=int(func.split('pol_order')[1])
+   f2 = ROOT.TF1("f2", "[0] + [1]*pow(x,%i)" % order, 20., 200.)
   elif func == 'cb_eff':
     par = [10,5,6,2.,1.]
     f2 = ROOT.TF1("f2",crystalballEfficiency,20.,200.,5)
@@ -141,7 +137,6 @@ def FitSF(h,func='erf'):
     f2 = ROOT.TF1("f2",'(x<50)*([0]+[1]*x)+(x>=50)*([2]+[3]*x)',20.,200.)
   elif func=='pol1_split_constrained':
     split=50.
-    #f2 = ROOT.TF1("f2",'(x<%(split).1f)*([0]+[1]*x)+(x>=%(split).1f)*(([0]+[1]*%(split).1f)+[2]*(x-%(split).1f))' % vars(),20.,200.)
     f2 = ROOT.TF1("f2",'([0]+[1]*min(x,%(split).1f))' % vars(),20.,200.)
   elif 'pol' in func:
     f2 = ROOT.TF1("f2",func,20.,200.)
