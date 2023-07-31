@@ -11,6 +11,7 @@ description = '''This script makes the graphs containing the split uncertainties
 parser = ArgumentParser(prog="decoupleUncerts",description=description,epilog="Success!")
 parser.add_argument('--dm-bins', dest='dm_bins', default=False, action='store_true', help="if specified then the mu+tauh channel fits are also split by tau decay-mode")
 parser.add_argument('--split-fit', dest='split_fit', default=False, action='store_true', help="if specified then split the pT dependent fits into 2 regions < 50 GeV and > 50 GeV")
+parser.add_argument('--split-fit-join', dest='split_fit_join', default=False, action='store_true', help="if specified then split the pT dependent fits into 2 regions < 50 GeV and > 50 GeV but the functions are constrained to join at pT=50")
 parser.add_argument('--saveJson', dest='saveJson', default=False, action='store_true', help="if specified then store the scale factors into jsons")
 parser.add_argument('--wp', dest='wp', type=str, default='dummy_wp', help="The WP the SF are produced for (only used for storing json correctly)")
 parser.add_argument('--file_total', '-f1', help= 'File containing the output of MultiDimFit with all uncertainties floating')
@@ -155,6 +156,8 @@ else: out_file='split_uncertainties.root'
 
 if args.split_fit: 
   out_file=out_file.replace('.root','_split_fit.root')
+elif args.split_fit_join: 
+  out_file=out_file.replace('.root','_split_fit_join.root')
 
 fout = ROOT.TFile(output_folder+'/'+out_file,'RECREATE')
 
@@ -303,6 +306,10 @@ def CompareSystsPlot(nom, systs,output_name):
   c1.Print(output_name+'.pdf')
 
 dm_binned_strings={}
+
+tot_chi2=0.
+tot_ndf=0.
+
 if args.dm_bins:
 
 
@@ -310,7 +317,8 @@ if args.dm_bins:
     for dm in [0,1,10,11]:
 
       if args.split_fit: fit_func='pol1_split'
-      else: fit_func='pol1'
+      elif args.split_fit_join: fit_func='pol1_split_constrained'
+      else: fit_func='sigmoid'#'pol1'
      
 #      if dm==1 and era != '2016_preVFP': fit_func='erf'
       graph_name = 'DM%(dm)s_%(era)s' % vars()
@@ -336,8 +344,16 @@ if args.dm_bins:
         fit_down.Write()
         systs_to_plot.append((fit_up.Clone(), fit_down.Clone()))
 
+      print('\nfitting nominal: '+g.GetName() )
       # we also fit the nominal SFs again, just to make sure everything is consistent with the uncertainties
       fit_nom, h_uncert_nom, h_nom, uncerts_nom = FitSF(g,func=fit_func)
+      tot_chi2+=fit_nom.GetChisquare()
+      tot_ndf+=fit_nom.GetNDF()
+      print('finished fitting nominal\n')
+
+      extra_name=''
+      if args.split_fit: extra_name='_split_fit' 
+      elif args.split_fit_join: extra_name='_split_fit_join'
 
       if sepTES:
         # TES shifts are not described very well by pol1 fit so we use a different procedure
@@ -346,9 +362,11 @@ if args.dm_bins:
         # an error function + pol0 and then to get final function we multiply this by the pol1 fit for the nominal SFs
         gr_up=fout.Get(graph_name+'_TESUp').Clone()
         gr_down=fout.Get(graph_name+'_TESDown').Clone()
-        if args.split_fit:
+        if (args.split_fit or args.split_fit_join):
           fit_up, h_uncert_up, h_up, uncerts_up = FitSF(gr_up,func=fit_func)
           fit_down, h_uncert_down, h_down, uncerts_down = FitSF(gr_down,func=fit_func)
+          PlotSF(gr_up, h_uncert_up, 'TESUp_DM%(dm)s_%(era)s' % vars()+ extra_name, title='DM%(dm)s, %(era)s' % vars(), output_folder=output_folder)
+          PlotSF(gr_down, h_uncert_down, 'TESDown_DM%(dm)s_%(era)s' % vars()+extra_name, title='DM%(dm)s, %(era)s' % vars(), output_folder=output_folder)
         else:
           gr_nom=fout.Get(graph_name)
           gr_up.SetName(graph_name+'_TESUp_relative')
@@ -365,8 +383,8 @@ if args.dm_bins:
           if func_nom[0]!='(': func_nom='('+func_nom+')'
           if func_rel_up[0]!='(': func_rel_up='('+func_rel_up+')'
           if func_rel_down[0]!='(': func_rel_down='('+func_rel_down+')'
-          PlotSF(gr_up, h_uncert_up, 'TESUp_relative_DM%(dm)s_%(era)s' % vars()+ ('_split_fit' if args.split_fit else ''), title='DM%(dm)s, %(era)s' % vars(), output_folder=output_folder)
-          PlotSF(gr_down, h_uncert_down, 'TESDown_relative_DM%(dm)s_%(era)s' % vars()+ ('_split_fit' if args.split_fit else ''), title='DM%(dm)s, %(era)s' % vars(), output_folder=output_folder)
+          PlotSF(gr_up, h_uncert_up, 'TESUp_relative_DM%(dm)s_%(era)s' % vars()+ extra_name, title='DM%(dm)s, %(era)s' % vars(), output_folder=output_folder)
+          PlotSF(gr_down, h_uncert_down, 'TESDown_relative_DM%(dm)s_%(era)s' % vars()+extra_name, title='DM%(dm)s, %(era)s' % vars(), output_folder=output_folder)
           fit_rel_up.Write()
           fit_rel_down.Write()
           fit_up = ROOT.TF1(graph_name+'_TESUp_fit',func_rel_up+'*'+func_nom,20,200)       
@@ -399,9 +417,9 @@ if args.dm_bins:
         x[2].Write()
 
       # make some plots of SFs and uncertainties
-      PlotSF(g, h_uncert_nom, 'tau_sf_DM%(dm)s_%(era)s' % vars()+ ('_split_fit' if args.split_fit else ''), title='DM%(dm)s, %(era)s' % vars(), output_folder=output_folder)
-      CompareSystsPlot(fit_nom,systs_to_plot,output_folder+'/'+'uncerts_systs_tau_sf_DM%(dm)s_%(era)s' % vars()+ ('_split_fit' if args.split_fit else ''))
-      CompareSystsPlot(fit_nom,stats_to_plot,output_folder+'/'+'uncerts_stats_tau_sf_DM%(dm)s_%(era)s' % vars()+ ('_split_fit' if args.split_fit else ''))
+      PlotSF(g, h_uncert_nom, 'tau_sf_DM%(dm)s_%(era)s' % vars()+extra_name, title='DM%(dm)s, %(era)s' % vars(), output_folder=output_folder)
+      CompareSystsPlot(fit_nom,systs_to_plot,output_folder+'/'+'uncerts_systs_tau_sf_DM%(dm)s_%(era)s' % vars()+extra_name)
+      CompareSystsPlot(fit_nom,stats_to_plot,output_folder+'/'+'uncerts_stats_tau_sf_DM%(dm)s_%(era)s' % vars()+extra_name)
       dm_binned_strings[g.GetName()] = str(fit_nom.GetExpFormula('p')).replace('x','min(max(pt_2,20.),140.)')
 
 # make plots of pT-dependent SFs
@@ -424,6 +442,16 @@ if args.dm_bins and args.saveJson:
     sf_map[wp][era] = out
     print out
 
-  json_out_name = output_folder+'tau_SF_strings_dm_binned_%(wp)s' % vars() + ('_split_fit.json' if args.split_fit else '.json')
+  json_out_name = output_folder+'tau_SF_strings_dm_binned_%(wp)s' % vars() + extra_name+'.json'
   with open(json_out_name, 'w') as fp:
     json.dump(sf_map, fp, sort_keys=True, indent=4)
+
+
+
+def compute_p_value(chi2, ndf):
+    p_value = ROOT.TMath.Prob(chi2, int(ndf))
+    
+    return p_value
+
+p_value = ROOT.TMath.Prob(tot_chi2, int(tot_ndf))
+print 'Total chi2/NDF, p-value = %.2f/%.0f, %.6f ' % (tot_chi2, tot_ndf, p_value) 

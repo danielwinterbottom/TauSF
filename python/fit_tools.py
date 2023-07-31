@@ -91,10 +91,11 @@ def crystalballEfficiencyCorrParams(x, par):
     return _crystalballEfficiency( x, m0, sigma, alpha, n, norm )
 
 def FitSF(h,func='erf'):
-  h_uncert = ROOT.TH1D(h.GetName()+'_uncert',"",1000,0,200)
+  h_uncert = ROOT.TH1D(h.GetName()+'_uncert',"",1000,20,200)
   if func == 'erf':
     f2 = ROOT.TF1("f2","[0]*TMath::Erf((x-[1])/[2])+[3]",20.,200.)
     f2.SetParameter(2,40)
+    f2.SetParameter(3,0)
   elif func == 'erf_rev':
     f2 = ROOT.TF1("f2","[0]*TMath::Erf((-x-[1])/[2])+[3]",20.,200.)
     f2.SetParameter(0,0.1)
@@ -106,6 +107,26 @@ def FitSF(h,func='erf'):
     f2 = ROOT.TF1("f2","[0]*(TMath::Erf((x-[1])/[2]) + [3] + [4]*x)",20.,200.) 
     f2.SetParameter(2,40)
     f2.SetParameter(3,0)
+  #elif func == 'erf_pol':
+  #  #error function with additional constant
+  #  f2 = ROOT.TF1("f2","(TMath::Erf((x-[0])/[1]) + [2])",20.,200.)
+  #  f2.SetParameter(1,40)
+  #  #f2.SetParLimits(1,30,100)
+  #  f2.SetParameter(2,0) #0
+  elif func == 'erf_pol':
+    #error function with additional constant
+    f2 = ROOT.TF1("f2","(TMath::Erf((x/[0])) + [1])",20.,200.)
+    f2.SetParameter(0,40)
+    f2.SetParameter(2,0)
+  elif func == 'sigmoid':
+   f2 = ROOT.TF1("f2","([0]-TMath::Erf((x/[1])))",20.,200.)
+   #f2 = ROOT.TF1("f2","([0])",20.,200.)
+   f2.SetParameter(0,0.1)
+   f2.SetParameter(1,1)
+   f2 = ROOT.TF1("f2", "[0] + [1]*TMath::Log(x)", 20., 200.)
+   f2 = ROOT.TF1("f2", "[0] + [1]/pow(x,2)", 20., 200.)
+   #f2.SetParLimits(1,0.,10)
+   #f2.SetParLimits(1,-100,100)
   elif func == 'cb_eff':
     par = [10,5,6,2.,1.]
     f2 = ROOT.TF1("f2",crystalballEfficiency,20.,200.,5)
@@ -118,6 +139,10 @@ def FitSF(h,func='erf'):
     f2 = ROOT.TF1("f2",'pol0',40.,200.)
   elif func=='pol1_split':
     f2 = ROOT.TF1("f2",'(x<50)*([0]+[1]*x)+(x>=50)*([2]+[3]*x)',20.,200.)
+  elif func=='pol1_split_constrained':
+    split=50.
+    #f2 = ROOT.TF1("f2",'(x<%(split).1f)*([0]+[1]*x)+(x>=%(split).1f)*(([0]+[1]*%(split).1f)+[2]*(x-%(split).1f))' % vars(),20.,200.)
+    f2 = ROOT.TF1("f2",'([0]+[1]*min(x,%(split).1f))' % vars(),20.,200.)
   elif 'pol' in func:
     f2 = ROOT.TF1("f2",func,20.,200.)
   else:
@@ -135,7 +160,8 @@ def FitSF(h,func='erf'):
   count = 0
   maxN = 100
   while rep:
-    fitresult = h.Fit("f2",'SIR')
+    #fitresult = h.Fit("f2",'SIR')
+    fitresult = h.Fit("f2",'SR')
     rep = int(fitresult) != 0
     if not rep or count>maxN:
       ROOT.TVirtualFitter.GetFitter().GetConfidenceIntervals(h_uncert, 0.68)
