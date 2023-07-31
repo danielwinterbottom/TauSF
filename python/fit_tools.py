@@ -117,7 +117,15 @@ def FitSF(h,func='erf'):
   elif func == 'pol0_gt40':
     f2 = ROOT.TF1("f2",'pol0',40.,200.)
   elif func=='pol1_split':
-    f2 = ROOT.TF1("f2",'(x<50)*([0]+[1]*x)+(x>=50)*([2]+[3]*x)',20.,200.)
+    f2 = ROOT.TF1("f2", "[0] + [1]*TMath::Log(x)", 20., 200.)
+    #f2.SetParLimits(1,0.,10)
+    #f2 = ROOT.TF1("f2","([0]-TMath::Erf((x/[1])))",20.,200.)
+    #f2.SetParameter(0,0.1)
+    #f2.SetParameter(1,1)
+    #f2 = ROOT.TF1("f2",'(x<50)*([0]+[1]*x)+(x>=50)*(50*([1]-[2]) + [0] +[2]*x)',20.,200.)
+    #f2.SetParameter(0,0.5)
+    #f2.SetParameter(1,0.05)
+    #f2.SetParameter(2,0.005)
   elif 'pol' in func:
     f2 = ROOT.TF1("f2",func,20.,200.)
   else:
