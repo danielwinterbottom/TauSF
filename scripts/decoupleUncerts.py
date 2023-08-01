@@ -378,8 +378,8 @@ if args.dm_bins:
 # erf works well for pol1 fits but for pol_order-2 can use same function
 #          fit_rel_up, h_uncert_up, h_up, uncerts_up = FitSF(gr_up,func='erf_rev')
 #          fit_rel_down, h_uncert_down, h_down, uncerts_down = FitSF(gr_down,func='erf')
-          fit_rel_up, h_uncert_up, h_up, uncerts_up = FitSF(gr_up,func='fit_func')
-          fit_rel_down, h_uncert_down, h_down, uncerts_down = FitSF(gr_down,func='fit_func')
+          fit_rel_up, h_uncert_up, h_up, uncerts_up = FitSF(gr_up,func=fit_func)
+          fit_rel_down, h_uncert_down, h_down, uncerts_down = FitSF(gr_down,func=fit_func)
           func_rel_up = str(fit_rel_up.GetExpFormula('p'))
           func_rel_down = str(fit_rel_down.GetExpFormula('p'))
           func_nom=str(fit_nom.GetExpFormula('p'))
