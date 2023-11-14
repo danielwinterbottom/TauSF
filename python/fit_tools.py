@@ -123,6 +123,8 @@ def FitSF(h,func='erf'):
   elif 'pol_order' in func:
    order=int(func.split('pol_order')[1])
    f2 = ROOT.TF1("f2", "[0] + [1]*pow(x,%i)" % order, 20., 200.)
+   #f2 = ROOT.TF1("f2", "[0] + [1]*x + [2]*x*x + [3]*x*x*x", 20., 200.)
+   #f2 = ROOT.TF1("f2", "[0] + [1]*pow(x,%i)" % order, 20., 200.)
   elif func == 'cb_eff':
     par = [10,5,6,2.,1.]
     f2 = ROOT.TF1("f2",crystalballEfficiency,20.,200.,5)
@@ -181,4 +183,10 @@ def PlotSF(f, h, name, title='', output_folder='./'):
   c1.RedrawAxis()
   h.SetStats(0)
   h.SetFillColor(ROOT.kBlue-10)
+  latex = ROOT.TLatex()
+  latex.SetNDC()
+  latex.SetTextFont(42)
+  latex.SetTextSize(0.05)
+  latex.SetTextAlign(31)
+  latex.DrawLatex(0.9, 0.91, "#scale[0.8]{59.7 fb^{-1} (13 TeV)}")
   c1.Print(output_folder+'/'+name+'.pdf')

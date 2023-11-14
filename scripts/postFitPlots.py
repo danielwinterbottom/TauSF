@@ -622,6 +622,11 @@ def main(args):
     for legi,hists in enumerate(bkg_histos):
         legend.AddEntry(hists,background_schemes[channel][legi]['leg_text'],"f")
     #legend.AddEntry(bkghist,"Background uncertainty","f")
+    # Retrieve the bin contents
+    bin_contents = [bkghist.GetBinError(bin) for bin in range(1, bkghist.GetNbinsX() + 1)]
+
+    # Print the bin contents
+    for bin, content in enumerate(bin_contents): print("Bin {}: {}".format(bin+1, content))
     bkghist.SetLineWidth(0)
     legend.AddEntry(bkghist,"Bkg. unc.","f")
     legend.Draw("same")
@@ -660,6 +665,7 @@ def main(args):
     axish[1].GetYaxis().SetTitle("Obs./Exp.")
     if args.ratio:
         ratio_bkghist = plot.MakeRatioHist(bkghist,bkghist,True,False)
+        #print bkghist.GetMeanError()
 
 
         bkghist_errors = bkghist.Clone()
@@ -689,9 +695,9 @@ def main(args):
     pads[0].RedrawAxis()
     
     #Save as pdf with some semi sensible filename
+
     shape_file_name = shape_file_name.replace(".root","")
     shape_file_name = shape_file_name.replace("_shapes","")
-    print shape_file_name
     outname += shape_file_name+"_"+file_dir.strip("htt").strip("_")
     if(log_x): 
         outname+="_logx"

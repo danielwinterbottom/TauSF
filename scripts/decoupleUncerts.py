@@ -243,7 +243,7 @@ def PlotpTBinned(nom, systs,output_name):
   c1=ROOT.TCanvas()
 
   nom.GetXaxis().SetTitle('p_{T} (GeV)')
-  nom.GetYaxis().SetTitle('correction')
+  nom.GetYaxis().SetTitle('Correction')
   nom.SetTitle('')
   nom.SetMarkerStyle(20)
   nom.Draw('ape')
@@ -375,8 +375,11 @@ if args.dm_bins:
           gr_down=GraphDivideErrors(gr_down,gr_nom)
           gr_up.Write() 
           gr_down.Write() 
-          fit_rel_up, h_uncert_up, h_up, uncerts_up = FitSF(gr_up,func='erf_rev')
-          fit_rel_down, h_uncert_down, h_down, uncerts_down = FitSF(gr_down,func='erf')
+          # erf works well for pol1 fits but for pol_order-2 can use same function
+#          fit_rel_up, h_uncert_up, h_up, uncerts_up = FitSF(gr_up,func='erf_rev')
+#          fit_rel_down, h_uncert_down, h_down, uncerts_down = FitSF(gr_down,func='erf')
+          fit_rel_up, h_uncert_up, h_up, uncerts_up = FitSF(gr_up,func=fit_func)
+          fit_rel_down, h_uncert_down, h_down, uncerts_down = FitSF(gr_down,func=fit_func)
           func_rel_up = str(fit_rel_up.GetExpFormula('p'))
           func_rel_down = str(fit_rel_down.GetExpFormula('p'))
           func_nom=str(fit_nom.GetExpFormula('p'))
@@ -417,10 +420,30 @@ if args.dm_bins:
         x[2].Write()
 
       # make some plots of SFs and uncertainties
-      PlotSF(g, h_uncert_nom, 'tau_sf_DM%(dm)s_%(era)s' % vars()+extra_name, title='DM%(dm)s, %(era)s' % vars(), output_folder=output_folder)
-      CompareSystsPlot(fit_nom,systs_to_plot,output_folder+'/'+'uncerts_systs_tau_sf_DM%(dm)s_%(era)s' % vars()+extra_name)
-      CompareSystsPlot(fit_nom,stats_to_plot,output_folder+'/'+'uncerts_stats_tau_sf_DM%(dm)s_%(era)s' % vars()+extra_name)
-      dm_binned_strings[g.GetName()] = str(fit_nom.GetExpFormula('p')).replace('x','min(max(pt_2,20.),140.)')
+      # PlotSF(g, h_uncert_nom, 'tau_sf_DM%(dm)s_%(era)s' % vars()+extra_name, title='DM%(dm)s, %(era)s' % vars(), output_folder=output_folder)
+      # CompareSystsPlot(fit_nom,systs_to_plot,output_folder+'/'+'uncerts_systs_tau_sf_DM%(dm)s_%(era)s' % vars()+extra_name)
+      # CompareSystsPlot(fit_nom,stats_to_plot,output_folder+'/'+'uncerts_stats_tau_sf_DM%(dm)s_%(era)s' % vars()+extra_name)
+      # dm_binned_strings[g.GetName()] = str(fit_nom.GetExpFormula('p')).replace('x','min(max(pt_2,20.),140.)')
+      if dm==0:
+        PlotSF(g, h_uncert_nom, 'tau_sf_DM%(dm)s_%(era)s' % vars()+extra_name, title='#tau^{ #pm} #rightarrow #pi^{ #pm} #nu_{#tau}, %(era)s' % vars(), output_folder=output_folder)
+        CompareSystsPlot(fit_nom,systs_to_plot,output_folder+'/'+'uncerts_systs_tau_sf_DM%(dm)s_%(era)s' % vars()+extra_name)
+        CompareSystsPlot(fit_nom,stats_to_plot,output_folder+'/'+'uncerts_stats_tau_sf_DM%(dm)s_%(era)s' % vars()+extra_name)
+        dm_binned_strings[g.GetName()] = str(fit_nom.GetExpFormula('p')).replace('x','min(max(pt_2,20.),140.)')
+      if dm==1:
+        PlotSF(g, h_uncert_nom, 'tau_sf_DM%(dm)s_%(era)s' % vars()+extra_name, title='#tau^{ #pm} #rightarrow #pi^{ #pm} #pi^{ 0} #nu_{#tau}' % vars(), output_folder=output_folder)
+        CompareSystsPlot(fit_nom,systs_to_plot,output_folder+'/'+'uncerts_systs_tau_sf_DM%(dm)s_%(era)s' % vars()+extra_name)
+        CompareSystsPlot(fit_nom,stats_to_plot,output_folder+'/'+'uncerts_stats_tau_sf_DM%(dm)s_%(era)s' % vars()+extra_name)
+        dm_binned_strings[g.GetName()] = str(fit_nom.GetExpFormula('p')).replace('x','min(max(pt_2,20.),140.)')
+      if dm==10:
+        PlotSF(g, h_uncert_nom, 'tau_sf_DM%(dm)s_%(era)s' % vars()+extra_name, title='#tau^{ #pm} #rightarrow #pi^{ #pm} #pi^{ #mp} #pi^{ #pm} #nu_{#tau}, %(era)s' % vars(), output_folder=output_folder)
+        CompareSystsPlot(fit_nom,systs_to_plot,output_folder+'/'+'uncerts_systs_tau_sf_DM%(dm)s_%(era)s' % vars()+extra_name)
+        CompareSystsPlot(fit_nom,stats_to_plot,output_folder+'/'+'uncerts_stats_tau_sf_DM%(dm)s_%(era)s' % vars()+extra_name)
+        dm_binned_strings[g.GetName()] = str(fit_nom.GetExpFormula('p')).replace('x','min(max(pt_2,20.),140.)')
+      if dm==11:
+        PlotSF(g, h_uncert_nom, 'tau_sf_DM%(dm)s_%(era)s' % vars()+extra_name, title='#tau^{ #pm} #rightarrow #pi^{ #pm} #pi^{ #mp} #pi^{ #pm} #pi^{ 0} #nu_{#tau}, %(era)s' % vars(), output_folder=output_folder)
+        CompareSystsPlot(fit_nom,systs_to_plot,output_folder+'/'+'uncerts_systs_tau_sf_DM%(dm)s_%(era)s' % vars()+extra_name)
+        CompareSystsPlot(fit_nom,stats_to_plot,output_folder+'/'+'uncerts_stats_tau_sf_DM%(dm)s_%(era)s' % vars()+extra_name)
+        dm_binned_strings[g.GetName()] = str(fit_nom.GetExpFormula('p')).replace('x','min(max(pt_2,20.),140.)')
 
 # make plots of pT-dependent SFs
 if not args.dm_bins:
@@ -454,4 +477,12 @@ def compute_p_value(chi2, ndf):
     return p_value
 
 p_value = ROOT.TMath.Prob(tot_chi2, int(tot_ndf))
-print '\nTotal chi2/NDF, p-value = %.2f/%.0f, %.6f ' % (tot_chi2, tot_ndf, p_value) 
+file_name = "chi_2_values_polynomials.txt"
+print '\nTotal chi2/NDF, p-value = %.2f/%.0f, %.6f ' % (tot_chi2, tot_ndf, p_value)
+with open(file_name, 'a') as file:
+    # Write the formatted string to the file
+    if args.split_fit:
+       file.write("\n%(wp)s_splitfit" %vars())
+    else:
+       file.write("\n%(wp)s" %vars())
+    file.write('\nTotal chi2/NDF, p-value = %.2f/%.0f, %.10f ' % (tot_chi2, tot_ndf, p_value))

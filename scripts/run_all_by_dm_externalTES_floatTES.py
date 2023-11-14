@@ -20,7 +20,7 @@ output_dir=args.output_folder
 
 fix_tes=False
 
-os.system('ulimit -s unlimited')
+os.system('ulimit -s unlimited') #everytime you do os, it opens a new shell so this won't work - need to run it before the script
 
 # make text datacards
 os.system('python scripts/harvestDatacards_newQCD_uncerts.py --dm-bins -o \"outputs/%s\" --wp %s --useCRs -e %s' % (output_dir, args.wp, args.eras) + (' --tightVsEle' if args.tightVsEle else ''))
@@ -158,14 +158,15 @@ if args.eras!='all':
   eras_str='-e \"%s\"' % args.eras
 else: eras_str=''
 
-for v in variations:
-  os.system('python scripts/makeSFGraphs.py  -f outputs/%s/cmb/higgsCombine.ztt.bestfit.singles.postfit%s.MultiDimFit.mH125.root --dm-bins --saveJson --wp=\"%s\" %s' %(output_dir, v, args.wp+'vsjet_'+ 'tightvsele' if args.tightVsEle else 'vvloosevsele',eras_str))
-
 # finally make final fits and obtain uncertainty variations
 if args.tightVsEle:
   json_out="--saveJson --wp=%svsjet_tightvsele" % args.wp
 else:
   json_out="--saveJson --wp=%svsjet_vvloosevsele" % args.wp
+
+for v in variations:
+  os.system('python scripts/makeSFGraphs.py  -f outputs/%s/cmb/higgsCombine.ztt.bestfit.singles.postfit%s.MultiDimFit.mH125.root --dm-bins %s %s' %(output_dir, v, json_out, eras_str))
+
 
 dir_name='outputs/%(output_dir)s/cmb/' % vars()
 for extra in ['','--split-fit']: 

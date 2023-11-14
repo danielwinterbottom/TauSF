@@ -75,7 +75,7 @@ def NegativeYields(p):
 channels = ['zmm','mt']
 bkg_procs = {}
 # procs for the dimuon channel
-bkg_procs['zmm'] = ['ZL', 'ZTT','VVT', 'VVJ', 'TTT', 'TTJ','W','ZJ']
+bkg_procs['zmm'] = ['ZL', 'ZTT','VVL', 'VVJ', 'TTL', 'TTJ','W','ZJ']
 # procs for the mu+tauh channel
 bkg_procs['mt'] = ['ZL', 'ZJ', 'W', 'VVJ', 'TTJ', 'QCD']
 
@@ -365,8 +365,8 @@ for era in eras:
 # Populating Observation, Process and Systematic entries in the harvester instance
 for chn in channels:
   for era in eras:
-    if chn=='zmm': filename = 'shapes/ztt.datacard.m_vis.%s.%s.%s.root' % (chn,era,wp)
-    else: filename = 'shapes/ztt.datacard.m_vis.%s.%s.%s.PFMet.root' % (chn,era,wp)
+    if chn=='zmm': filename = 'shapes_CR/ztt.datacard.m_vis.%s.%s.%s.root' % (chn,era,wp)
+    else: filename = 'shapes_CR/ztt.datacard.m_vis.%s.%s.%s.PFMet.root' % (chn,era,wp)
     print ">>>   file %s" % (filename)
     print('%s, %s' % (chn, era))
     cb.cp().channel([chn]).process(bkg_procs[chn]).era([era]).ExtractShapes(filename, "$BIN/$PROCESS", "$BIN/$PROCESS_$SYSTEMATIC")
