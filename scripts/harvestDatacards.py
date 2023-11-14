@@ -6,7 +6,7 @@ import yaml
 #import os
 
 # specify with eras to fit or combine all eras together by specifying "all"
-valid_eras = ['2016_preVFP', '2016_postVFP', '2017', '2018', 'all']
+valid_eras = ['2016_preVFP', '2016_postVFP', '2017', '2018', 'UL', '2022_preEE', '2022_postEE', '2022']
 
 # HI
 description = '''This script makes datacards with CombineHarvester for performing tau ID SF measurments.'''
@@ -35,7 +35,8 @@ era_tag = setup["eras"]
 
 if args.output_folder: output_folder = args.output_folder
 
-if era_tag == 'all': eras = ['2016_preVFP', '2016_postVFP', '2017', '2018'] # add other eras later
+if era_tag == 'UL': eras = ['2016_preVFP', '2016_postVFP', '2017', '2018'] # add other eras later
+if era_tag == '2022': eras = ['2022_preEE', '2022_postEE']
 else: eras = era_tag.split(',')
 
 for e in eras: 

@@ -330,6 +330,12 @@ def main(args):
         lumi = "59.7 fb^{-1} (13 TeV)"
     elif era == "all":
         lumi = "138 fb^{-1} (13 TeV)"
+    elif era == "2022_preEE":
+        lumi = "8.08 fb^{-1} (13.6 TeV)"
+    elif era == "2022_postEE":
+        lumi = "27.0 fb^{-1} (13.6 TeV)"
+    elif era == "2022":
+        lumi = "35.08 fb^{-1} (13.6 TeV)"
 
     plot.ModTDRStyle(width=1800, height=700, r=0.4, l=0.16, t=0.12,b=0.15)
     ROOT.TGaxis.SetExponentOffset(-0.06, 0.01, "y")

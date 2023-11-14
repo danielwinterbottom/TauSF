@@ -5,13 +5,14 @@ ROOT.gROOT.SetBatch(1)
 # HI
 description = '''This script makes plots of the pT-dependent SFs.'''
 parser = ArgumentParser(prog="harvesterDatacards",description=description,epilog="Success!")
-parser.add_argument('-e', '--eras', dest='eras', type=str, default='all', help="Eras to make plots of pT dependent SFs for")
+parser.add_argument('-e', '--eras', dest='eras', type=str, default='UL', help="Eras to make plots of pT dependent SFs for; can be UL or 2022")
 parser.add_argument('-o', '--output_folder', dest='output_folder', type=str, default='./', help="Specify the output directory where the plots will be saved")
 parser.add_argument('--file', '-f', help= 'File containing the TGraphAsymmErrors objects')
 args = parser.parse_args()
 
 output_folder = args.output_folder
-if args.eras == 'all': eras = ['2016_preVFP', '2016_postVFP', '2017', '2018']
+if args.eras == 'UL': eras = ['2016_preVFP', '2016_postVFP', '2017', '2018']
+if args.eras == '2022': eras = ['2022_preEE', '2022_postEE']
 else: eras=args.eras.split(',')
 
 f1 = ROOT.TFile(args.file)

@@ -9,14 +9,14 @@ tes=["CMS_scale_t_1prong_$YEAR", "CMS_scale_t_1prong1pizero_$YEAR", "CMS_scale_t
 
 parser = ArgumentParser()
 parser.add_argument('-o', '--output_folder', dest='output_folder', type=str, default='', help="set output folder name")
-parser.add_argument('-e', '--eras', dest='eras', type=str, default='all', help="set eras to be processed")
+parser.add_argument('-e', '--eras', dest='eras', type=str, default='all', help="set eras to be processed; can be either UL or 2022")
 parser.add_argument('--wp', dest='wp', default='medium', help="The vs jet WP to measure SFs for")
 parser.add_argument('--tightVsEle', dest='tightVsEle', default=False, action='store_true', help="if specified then use the tight WP of the vs electron ID, otherwise the vvloose WP is used")
 args = parser.parse_args()
 
-if args.eras == 'all': eras = ['2016_preVFP', '2016_postVFP', '2017', '2018'] # add other eras later
-else: eras = args.eras.split(',')
-output_dir=args.output_folder
+if args.eras == 'UL': eras = ['2016_preVFP', '2016_postVFP', '2017', '2018'] # add other eras later
+if args.eras == '2022': eras = ['2022_preEE', '2022_postEE']
+else: eras=args.eras.split(',')
 
 fix_tes=False
 

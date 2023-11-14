@@ -20,11 +20,14 @@ parser.add_argument('--file_comb2', '-f3', help= 'File containing the output of 
 parser.add_argument('--file_comb3', '-f4', help= 'File containing the output of MultiDimFit with by eras, by pT-bins, and by DM-bins uncertainties fixed')
 parser.add_argument('--file_comb4', '-f5', help= 'File containing the output of MultiDimFit for +1-sigma TES shift', default=None)
 parser.add_argument('--file_comb5', '-f6', help= 'File containing the output of MultiDimFit for -1-sigma TES shift', default=None)
-parser.add_argument('-e', '--eras', dest='eras', type=str, default='all', help="Eras to make plots of pT dependent SFs for")
+parser.add_argument('-e', '--eras', dest='eras', type=str, default='UL', help="Eras to make plots of pT dependent SFs for; can be UL or 2022")
 parser.add_argument('-o', '--output_folder', dest='output_folder', type=str, default='./', help="Name of the output folder to save the root files and plots")
 args = parser.parse_args()
 
-if args.eras == 'all': eras = ['2016_preVFP', '2016_postVFP', '2017', '2018']
+if args.eras == "UL":
+   eras = ['2016_preVFP', '2016_postVFP', '2017', '2018']
+if args.eras == "2022":
+   eras = ['2022_preEE', '2022_postEE']
 else: eras=args.eras.split(',')
 
 output_folder=args.output_folder

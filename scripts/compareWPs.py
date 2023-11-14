@@ -1,9 +1,17 @@
 import ROOT
+from argparse import ArgumentParser
+
+parser = ArgumentParser()
+parser.add_argument('-e', '--eras', dest='eras', type=str, default='UL', help="Eras; can be either UL or 2022")
+args = parser.parse_args()
 ROOT.gROOT.SetBatch(1)
 
 colourlist=[ROOT.kBlue,ROOT.kRed,ROOT.kGreen+3,ROOT.kBlack,ROOT.kYellow+2,ROOT.kOrange,ROOT.kCyan+3,ROOT.kMagenta+2,ROOT.kViolet-5,ROOT.kGray]
 
-eras=['2016_preVFP','2016_postVFP','2017','2018']
+if args.eras == "UL":
+   eras = ['2016_preVFP', '2016_postVFP', '2017', '2018']
+if args.eras == "2022":
+   eras = ['2022_preEE', '2022_postEE']
 
 wps=['loose','medium','tight','vtight']
 #wps=['vvvloose','vvloose','vloose','loose','medium','tight','vtight','vvtight']
