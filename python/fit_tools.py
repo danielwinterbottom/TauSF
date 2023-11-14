@@ -107,12 +107,6 @@ def FitSF(h,func='erf'):
     f2 = ROOT.TF1("f2","[0]*(TMath::Erf((x-[1])/[2]) + [3] + [4]*x)",20.,200.) 
     f2.SetParameter(2,40)
     f2.SetParameter(3,0)
-  #elif func == 'erf_pol':
-  #  #error function with additional constant
-  #  f2 = ROOT.TF1("f2","(TMath::Erf((x-[0])/[1]) + [2])",20.,200.)
-  #  f2.SetParameter(1,40)
-  #  #f2.SetParLimits(1,30,100)
-  #  f2.SetParameter(2,0) #0
   elif func == 'erf_pol':
     #error function with additional constant
     f2 = ROOT.TF1("f2","(TMath::Erf((x/[0])) + [1])",20.,200.)
