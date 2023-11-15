@@ -236,10 +236,10 @@ cb.cp().channel(['mt']).process(['ZL']).bin_id(dm0_bins+inclusive_bins).AddSyst(
 cb.cp().channel(['mt']).process(['ZL']).bin_id(dm1_bins+inclusive_bins).AddSyst(cb, "CMS_ZLShape_$CHANNEL_1prong1pizero_$ERA", "shape", ch.SystMap()(1.00))
 
 #MET related uncertainties
-if era_tag == "UL":
-  cb.cp().channel(['mt']).process(['QCD'],False).AddSyst(cb, "CMS_res_j_$ERA", "shape", ch.SystMap()(1.00))
 cb.cp().channel(['mt']).process(['QCD'],False).AddSyst(cb, "CMS_scale_met_unclustered_$ERA", "shape", ch.SystMap()(1.00))
-if era_tag == "2022":
+if any(era in eras for era in ['2016_preVFP', '2016_postVFP', '2017', '2018']):
+  cb.cp().channel(['mt']).process(['QCD'],False).AddSyst(cb, "CMS_res_j_$ERA", "shape", ch.SystMap()(1.00))
+else:
   cb.cp().channel(['mt']).process(['QCD'],False).AddSyst(cb, "CMS_scale_met_clustered_$ERA", "shape", ch.SystMap()(1.00))
 
 # single JES parameter
@@ -248,7 +248,7 @@ if era_tag == "2022":
 jes_uncert_names = ["Absolute", "Absolute_year", "BBEC1", "BBEC1_year",
             "EC2", "EC2_year", "FlavorQCD", "HF", "HF_year",
             "RelativeBal", "RelativeSample_year"]
-if era_tag == "UL":
+if any(era in eras for era in ['2016_preVFP', '2016_postVFP', '2017', '2018']):
   for u in jes_uncert_names:
     if 'year' not in u:
       cb.cp().channel(['mt']).process(['QCD'],False).AddSyst(cb, "CMS_scale_j_%(u)s" % vars(), "shape", ch.SystMap()(1.00))
@@ -487,7 +487,7 @@ for era in eras:
     cb.cp().channel(['mt']).syst_name(['CMS_scale_met_unclustered_%s' % era, 'CMS_scale_met_clustered_%s' % era]).syst_type(["shape"]).ForEachSyst(lambda sys: sys.set_type('lnN'))
   else:
     cb.cp().channel(['mt']).syst_name(['CMS_scale_j_%s' % era,'CMS_res_j_%s' % era, 'CMS_scale_met_unclustered_%s' % era]).syst_type(["shape"]).ForEachSyst(lambda sys: sys.set_type('lnN'))
-if era_tag == "UL":
+if any(era in eras for era in ['2016_preVFP', '2016_postVFP', '2017', '2018']):
   for u in jes_uncert_names:
     if 'year' not in u:
       cb.cp().channel(['mt']).syst_name(['CMS_scale_j_%s' % u]).syst_type(["shape"]).ForEachSyst(lambda sys: sys.set_type('lnN'))
@@ -523,7 +523,7 @@ if useCRs: extra_systs = ' CMS_aiso_eff CMS_QCD_extrap_syst CMS_W_extrap'
 else: extra_systs = ''
 
 if not dm_bins:
-  if era_tag == "2022":
+  if any(era in eras for era in ['2022_preEE', '2022_postEE']):
     cb.AddDatacardLineAtEnd("byErasAndBins group = CMS_eff_m CMS_j_fake_m CMS_htt_vvXsec CMS_htt_tjXsec CMS_htt_dyShape CMS_htt_ttbarShape CMS_j_fake_t CMS_l_fake_t CMS_scale_jfake"+extra_systs)
     # add a group for systematics that are correlated by bins (excluding the uncertainties from the bins and eras group)
     systs_for_group = ["CMS_scale_t_1prong", "CMS_scale_t_1prong1pizero", "CMS_scale_t_3prong", "CMS_scale_t_3prong1pizero", "CMS_ZLShape_mt_1prong", "CMS_ZLShape_mt_1prong1pizero", "CMS_scale_met_unclustered", "CMS_scale_met_clustered", "rate_DY", "CMS_scale_jfake"]
@@ -532,7 +532,7 @@ if not dm_bins:
     systs_for_group = ["CMS_scale_t_1prong", "CMS_scale_t_1prong1pizero", "CMS_scale_t_3prong", "CMS_scale_t_3prong1pizero", "CMS_ZLShape_mt_1prong", "CMS_ZLShape_mt_1prong1pizero", "CMS_res_j", "CMS_scale_met_unclustered", "CMS_scale_j_Absolute_year", "CMS_scale_j_BBEC1_year", "CMS_scale_j_EC2_year", "CMS_scale_j_HF_year", "CMS_scale_j_RelativeSample_year", "rate_DY", "CMS_scale_jfake"]
   if not useCRs: systs_for_group+=["rate_QCD", "rate_W"]
 else:
-  if era_tag == "2022":
+  if any(era in eras for era in ['2022_preEE', '2022_postEE']):
     cb.AddDatacardLineAtEnd("byErasAndBins group = CMS_eff_m CMS_j_fake_m CMS_htt_vvXsec CMS_htt_tjXsec CMS_htt_dyShape CMS_htt_ttbarShape CMS_j_fake_t_DM0 CMS_j_fake_t_DM1 CMS_j_fake_t_DM10 CMS_j_fake_t_DM11 CMS_l_fake_t_DM0 CMS_l_fake_t_DM1 CMS_l_fake_t_DM10 CMS_l_fake_t_DM11 CMS_scale_jfake_DM0 CMS_scale_jfake_DM1 CMS_scale_jfake_DM10 CMS_scale_jfake_DM11"+extra_systs)
     # add a group for systematics that are correlated by bins (excluding the uncertainties from the bins and eras group)
     systs_for_group = ["CMS_scale_met_unclustered", "CMS_scale_met_clustered", "rate_DY"]
