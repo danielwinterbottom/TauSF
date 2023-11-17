@@ -23,9 +23,9 @@ def SubmitBatchJob(name,time=600,memory=24,cores=1):
   else: os.system('qsub -e %(error_log)s -o %(output_log)s -V -q hep.q -l h_rt=0:%(time)s:0 -l h_vmem=%(memory)sG -cwd %(name)s' % vars())
 
 
-for wp in ['loose', 'medium', 'tight', 'vtight', 'vvtight']:
-  cmd_1 = 'bash /vols/cms/ia2318/CMSSW_10_2_13/src/CombineHarvester/TauSF/scripts/run_all_by_dm.sh tauSF_output_v2p5_%(wp)s_dm_all_years_new %(wp)s False'% vars()
-  cmd_2 = 'bash /vols/cms/ia2318/CMSSW_10_2_13/src/CombineHarvester/TauSF/scripts/run_all_by_dm.sh tauSF_output_v2p5_%(wp)s_tightVsEle_dm_all_years_new %(wp)s True' % vars() 
+for wp in ["medium"]:#['loose', 'medium', 'tight', 'vtight', 'vvtight']:
+  cmd_1 = 'python /vols/cms/ia2318/CMSSW_10_2_13/src/CombineHarvester/TauSF/scripts/run_all_by_dm_externalTES_floatTES.py -o tauSF_output_v2p5_%(wp)s_dm_2022_TES3 --wp %(wp)s -e 2022'% vars()
+  cmd_2 = 'python /vols/cms/ia2318/CMSSW_10_2_13/src/CombineHarvester/TauSF/scripts/run_all_by_dm_externalTES_floatTES.py -o tauSF_output_v2p5_%(wp)s_tightVsEle_dm_2022_TES3 --wp %(wp)s -e 2022 --tightVsEle' % vars() 
   cmds = [cmd_1,cmd_2]
   vsele = ['vvloose', 'tight']
   for i in range(len(cmds)):
