@@ -24,11 +24,12 @@ parser.add_argument('-e', '--eras', dest='eras', type=str, default='UL', help="E
 parser.add_argument('-o', '--output_folder', dest='output_folder', type=str, default='./', help="Name of the output folder to save the root files and plots")
 args = parser.parse_args()
 
-if args.eras == "UL":
-   eras = ['2016_preVFP', '2016_postVFP', '2017', '2018']
-if args.eras == "2022":
-   eras = ['2022_preEE', '2022_postEE']
-else: eras=args.eras.split(',')
+if args.eras == 'UL':
+  eras = ['2016_preVFP', '2016_postVFP', '2017', '2018'] # add other eras later
+elif args.eras == '2022':
+  eras = ['2022_preEE', '2022_postEE']
+else: 
+  eras = args.eras.split(',')
 
 output_folder=args.output_folder
 
@@ -433,7 +434,7 @@ if args.dm_bins:
         CompareSystsPlot(fit_nom,stats_to_plot,output_folder+'/'+'uncerts_stats_tau_sf_DM%(dm)s_%(era)s' % vars()+extra_name)
         dm_binned_strings[g.GetName()] = str(fit_nom.GetExpFormula('p')).replace('x','min(max(pt_2,20.),140.)')
       if dm==1:
-        PlotSF(g, h_uncert_nom, 'tau_sf_DM%(dm)s_%(era)s' % vars()+extra_name, title='#tau^{ #pm} #rightarrow #pi^{ #pm} #pi^{ 0} #nu_{#tau}' % vars(), output_folder=output_folder)
+        PlotSF(g, h_uncert_nom, 'tau_sf_DM%(dm)s_%(era)s' % vars()+extra_name, title='#tau^{ #pm} #rightarrow #pi^{ #pm} #pi^{ 0} #nu_{#tau}, %(era)s' % vars(), output_folder=output_folder)
         CompareSystsPlot(fit_nom,systs_to_plot,output_folder+'/'+'uncerts_systs_tau_sf_DM%(dm)s_%(era)s' % vars()+extra_name)
         CompareSystsPlot(fit_nom,stats_to_plot,output_folder+'/'+'uncerts_stats_tau_sf_DM%(dm)s_%(era)s' % vars()+extra_name)
         dm_binned_strings[g.GetName()] = str(fit_nom.GetExpFormula('p')).replace('x','min(max(pt_2,20.),140.)')

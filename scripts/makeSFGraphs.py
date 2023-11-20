@@ -13,13 +13,16 @@ parser = ArgumentParser(prog="makeSFGraphs",description=description,epilog="Succ
 parser.add_argument('--dm-bins', dest='dm_bins', default=False, action='store_true', help="if specified then the mu+tauh channel fits are also split by tau decay-mode")
 parser.add_argument('--saveJson', dest='saveJson', default=False, action='store_true', help="if specified then store the scale factors into jsons")
 parser.add_argument('--file', '-f', help= 'File containing the output of MultiDimFit')
-parser.add_argument('-e', '--eras', dest='eras', type=str, default='UL', help="Eras to make plots of pT dependent SFs for; can be UL or 2022")
+parser.add_argument('-e', '--eras', dest='eras', type=str, default='UL', help="Eras to make plots of pT dependent SFs for; can be UL, 2022 or specific years")
 parser.add_argument('--wp', dest='wp', type=str, default='dummy_wp', help="The WP the SF are produced for (only used for storing json correctly)")
 #parser.add_argument('--pt_bins', dest='pt_bins', type=int, default='0', help="The pt bin being fitted")
 args = parser.parse_args()
-if args.eras == 'UL': eras = ['2016_preVFP', '2016_postVFP', '2017', '2018'] # add other eras later
-if args.eras == '2022': eras = ['2022_preEE', '2022_postEE']
-else: eras = args.eras.split(',')
+if args.eras == 'UL':
+  eras = ['2016_preVFP', '2016_postVFP', '2017', '2018'] # add other eras later
+elif args.eras == '2022':
+  eras = ['2022_preEE', '2022_postEE']
+else: 
+  eras = args.eras.split(',')
 
 dm_bins=args.dm_bins
 wp=args.wp
